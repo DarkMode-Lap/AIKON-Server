@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: aikon
+  datasource:
+    url: ${DATASOURCE_URL}
+    username: ${USERNAME}
+    password: ${PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: ${DDL_AUTO}
