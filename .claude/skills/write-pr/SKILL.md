@@ -84,7 +84,6 @@ Follow `.github/PULL_REQUEST_TEMPLATE.md` exactly:
 ```bash
 gh issue list --state open
 gh label list
-gh api repos/{owner}/{repo}/collaborators --jq '.[].login'
 gh api user --jq '.login'
 ```
 
@@ -106,7 +105,7 @@ gh api user --jq '.login'
 ### Reviewer & Assignee Rules
 
 - **Assignee**: 현재 git 사용자(`gh api user`) → `--assignee "@me"`
-- **Reviewer**: collaborators 목록에서 현재 사용자를 제외한 나머지를 모두 `--reviewer` 로 추가한다. collaborator가 없거나 본인뿐이면 생략한다.
+- **Reviewer**: `cfcromn`, `jyx-07` 고정. 단, 현재 사용자(`gh api user --jq '.login'`)가 이 목록에 포함되면 해당 사람은 제외한다.
 
 ## Step 5 — Create PR
 
