@@ -11,6 +11,9 @@ if [[ "$TOOL_NAME" == "Bash" ]]; then
     mkdir -p "$(dirname "$LOG_FILE")"
     echo "[$TIMESTAMP] $COMMAND" >> "$LOG_FILE"
 
+    # heredoc 이후 내용(인자값)은 제외하고 첫 줄 명령어만 검사
+    FIRST_LINE=$(echo "$COMMAND" | head -1)
+
     BLOCKED_PATTERNS=(
         "rm -rf[[:space:]]*/[[:space:]]*$"
         "sudo rm"
@@ -21,8 +24,8 @@ if [[ "$TOOL_NAME" == "Bash" ]]; then
         "wget.*\| sh"
     )
     for pattern in "${BLOCKED_PATTERNS[@]}"; do
-        if [[ "$COMMAND" =~ $pattern ]]; then
-            echo "[Hook] Blocked dangerous command: $COMMAND" >&2
+        if [[ "$FIRST_LINE" =~ $pattern ]]; then
+            echo "[Hook] Blocked dangerous command: $FIRST_LINE" >&2
             exit 2
         fi
     done
