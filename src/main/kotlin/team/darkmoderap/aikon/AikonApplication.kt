@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class AikonApplication
 
 fun main(args: Array<String>) {
-	runApplication<AikonApplication>(*args)
+    runApplication<AikonApplication>(*args)
 }
