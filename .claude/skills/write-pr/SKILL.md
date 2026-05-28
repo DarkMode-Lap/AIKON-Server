@@ -19,7 +19,9 @@ Read the key changed files to understand what was implemented.
 
 ### Title Format
 
-`type :: 설명` — same format as commit messages, reflecting the overall change.
+짧고 명확한 한국어 설명 — `type ::` 접두사 없이 작성한다.
+
+예시: `Claude Code 및 Codex AI 에이전트 개발 환경 설정 추가`
 
 ### Body Template
 
@@ -52,7 +54,21 @@ Follow `.github/PULL_REQUEST_TEMPLATE.md` exactly:
 
 ## Guidelines
 
-- Title: concise, reflects the most important change
+- Title: concise, reflects the most important change — NO `type ::` prefix
 - Body: Korean, focus on "why" not just "what"
 - 체크리스트는 항목 그대로 유지 — 체크 여부는 작성자가 직접 판단
 - Do NOT include file names in the body unless critical context
+
+## Step 4 — Create PR
+
+Push the branch and create the PR with `gh`:
+
+```bash
+git push -u origin HEAD
+gh pr create --base develop --title "<title>" --body "$(cat <<'EOF'
+<body>
+EOF
+)"
+```
+
+After creation, print the PR URL.
