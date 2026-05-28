@@ -25,7 +25,7 @@ if [[ "$TOOL_NAME" == "Edit" ]] || [[ "$TOOL_NAME" == "Write" ]] || [[ "$TOOL_NA
 
         FILE_NAME=$(basename "$FILE_PATH")
         if [[ "$FILE_NAME" == *ServiceImpl.kt ]] && [[ "$FILE_PATH" != */test/* ]]; then
-            TEST_CLASS="${FILE_NAME%Impl.kt}Test"
+            TEST_CLASS="${FILE_NAME%.kt}Test"
             echo "[Hook] Running test $TEST_CLASS..." >&2
             TEST_OUTPUT=$(./gradlew test --tests "$TEST_CLASS" 2>&1)
             TEST_EXIT=$?

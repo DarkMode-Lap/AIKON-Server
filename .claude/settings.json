@@ -16,7 +16,11 @@
       "Bash(gh pr*)",
       "Bash(gh label*)",
       "Bash(gh issue*)",
-      "Bash(gh api*)"
+      "Bash(gh api*)",
+      "Bash(gh repo*)",
+      "Bash(bash *)",
+      "Bash(find *)",
+      "Bash(rm -rf .pr-tmp)"
     ]
   },
   "hooks": {

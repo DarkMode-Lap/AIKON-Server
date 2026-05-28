@@ -5,9 +5,9 @@ TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name')
 
 if [[ "$TOOL_NAME" == "Edit" ]] || [[ "$TOOL_NAME" == "Write" ]]; then
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
-    CWD=$(echo "$INPUT" | jq -r '.cwd')
+    CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 
-    if [[ "$FILE_PATH" == *.kt ]]; then
+    if [[ "$FILE_PATH" == *.kt ]] && [[ -n "$CWD" ]]; then
         echo "[Hook] Running ktlintFormat for $(basename "$FILE_PATH")" >&2
         cd "$CWD"
         if ./gradlew ktlintFormat -q 2>&1; then
@@ -18,7 +18,7 @@ if [[ "$TOOL_NAME" == "Edit" ]] || [[ "$TOOL_NAME" == "Write" ]]; then
 
         FILE_NAME=$(basename "$FILE_PATH")
         if [[ "$FILE_NAME" == *ServiceImpl.kt ]] && [[ "$FILE_PATH" != */test/* ]]; then
-            TEST_CLASS="${FILE_NAME%Impl.kt}Test"
+            TEST_CLASS="${FILE_NAME%.kt}Test"
             echo "[Hook] Running test $TEST_CLASS..." >&2
             TEST_OUTPUT=$(./gradlew test --tests "$TEST_CLASS" 2>&1)
             TEST_EXIT=$?

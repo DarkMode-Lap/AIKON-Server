@@ -9,6 +9,10 @@ fi
 
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 BASE=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+if [ -z "$BASE" ]; then
+  echo "ERROR: Base branch not found." >&2
+  exit 1
+fi
 
 mkdir -p .pr-tmp
 
