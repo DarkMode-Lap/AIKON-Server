@@ -19,7 +19,9 @@ Read the key changed files to understand what was implemented.
 
 ### Title Format
 
-`type :: 설명` — same format as commit messages, reflecting the overall change.
+짧고 명확한 한국어 설명 — `type ::` 접두사 없이 작성한다.
+
+예시: `Claude Code 및 Codex AI 에이전트 개발 환경 설정 추가`
 
 ### Body Template
 

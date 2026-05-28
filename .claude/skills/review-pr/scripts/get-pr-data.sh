@@ -16,8 +16,8 @@ fi
 
 mkdir -p .pr-tmp
 
-gh api "repos/$REPO/pulls/$PR_NUMBER/comments" \
-  --jq '[.[] | {id, path, line, body, user: .user.login}]' \
+gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/comments" \
+  --jq '.[] | {id, path, line, body, user: .user.login}' | jq -s '.' \
   > .pr-tmp/pr_comments.json
 
 git log "origin/$BASE..HEAD" --pretty=format:"%H %h %s" > .pr-tmp/pr_commits.txt

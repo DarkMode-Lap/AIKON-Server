@@ -16,7 +16,7 @@ You are a Kotlin/Spring Boot convention enforcement agent for the aikon-server p
 Run the following command to get changed Kotlin files:
 
 ```bash
-git diff HEAD --name-only --diff-filter=ACMR | grep '\.kt$'
+git diff HEAD --name-only --diff-filter=ACMR -- '*.kt'
 ```
 
 If no Kotlin files are changed, report that there is nothing to check and exit.

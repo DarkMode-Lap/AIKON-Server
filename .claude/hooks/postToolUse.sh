@@ -8,8 +8,9 @@ if [[ "$TOOL_NAME" == "Edit" ]] || [[ "$TOOL_NAME" == "Write" ]]; then
     CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 
     if [[ "$FILE_PATH" == *.kt ]] && [[ -n "$CWD" ]]; then
+        PROJECT_ROOT=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$CWD")
         echo "[Hook] Running ktlintFormat for $(basename "$FILE_PATH")" >&2
-        cd "$CWD"
+        cd "$PROJECT_ROOT"
         if ./gradlew ktlintFormat -q 2>&1; then
             echo "[Hook] Format OK" >&2
         else
