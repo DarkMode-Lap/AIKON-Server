@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(./gradlew *)",
+      "Bash(git diff*)",
+      "Bash(git status)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git rev-parse*)",
+      "Bash(git push*)",
+      "Bash(gh pr*)",
+      "Bash(gh label*)",
+      "Bash(gh issue*)",
+      "Bash(gh api*)",
+      "Bash(gh repo*)",
+      "Bash(bash *)",
+      "Bash(find *)",
+      "Bash(rm -rf .pr-tmp)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/preToolUse.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/postToolUse.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "language": "korean",
+  "effortLevel": "high"
+}
