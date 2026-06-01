@@ -25,6 +25,6 @@ class UpdateAvatarServiceImpl(
             throw AikonException(ErrorCode.AVATAR_GENERATION_IN_PROGRESS)
         }
 
-        avatar.update(reqDto.nickname, reqDto.gender, reqDto.ageRange)
+        avatar.update(reqDto.nickname!!, reqDto.gender!!, reqDto.ageRange!!)
     }
 }
