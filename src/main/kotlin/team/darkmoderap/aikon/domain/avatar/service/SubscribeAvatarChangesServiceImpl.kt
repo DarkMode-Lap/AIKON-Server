@@ -44,7 +44,8 @@ class SubscribeAvatarChangesServiceImpl(
     }
 
     private fun findAvatarChanges(): List<AvatarChangeResDto> =
-        avatarRepository.findAllByOrderByIdAsc()
+        avatarRepository
+            .findAllByOrderByIdAsc()
             .map { avatar -> avatar.toChangeResDto() }
 
     private fun send(
