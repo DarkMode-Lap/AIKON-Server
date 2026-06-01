@@ -1,5 +1,6 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
@@ -12,9 +13,9 @@ class DeleteAvatarServiceImpl(
 ) : DeleteAvatarService {
     @Transactional
     override fun execute(avatarId: Long) {
-        if (!avatarRepository.existsById(avatarId)) {
-            throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
-        }
-        avatarRepository.deleteById(avatarId)
+        val avatar =
+            avatarRepository.findByIdOrNull(avatarId)
+                ?: throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
+        avatarRepository.delete(avatar)
     }
 }
