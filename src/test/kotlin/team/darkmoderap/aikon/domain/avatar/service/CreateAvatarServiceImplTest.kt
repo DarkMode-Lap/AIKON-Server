@@ -9,7 +9,6 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyCollection
 import org.mockito.BDDMockito.given
 import org.mockito.InjectMocks
 import org.mockito.Mock
@@ -48,7 +47,7 @@ class CreateAvatarServiceImplTest {
         @DisplayName("사용 중인 코드가 없으면 Aikon500을 배정하고 아바타를 생성한다")
         fun `creates avatar with first pass code when no code is used`() {
             // Given
-            given(avatarRepository.findPassUrlsByPassUrlIn(anyPassCodes())).willReturn(emptyList())
+            given(avatarRepository.findAllPassUrls()).willReturn(emptyList())
             given(avatarRepository.saveAndFlush(anyAvatar())).willAnswer { invocation -> invocation.arguments[0] }
             val reqDto = createReqDto()
 
@@ -67,7 +66,7 @@ class CreateAvatarServiceImplTest {
         @DisplayName("앞 번호가 사용 중이면 다음 사용 가능한 코드를 배정한다")
         fun `creates avatar with next pass code when previous codes are used`() {
             // Given
-            given(avatarRepository.findPassUrlsByPassUrlIn(anyPassCodes()))
+            given(avatarRepository.findAllPassUrls())
                 .willReturn(listOf("Aikon500", "Aikon501"))
             given(avatarRepository.saveAndFlush(anyAvatar())).willAnswer { invocation -> invocation.arguments[0] }
             val reqDto = createReqDto()
@@ -86,7 +85,7 @@ class CreateAvatarServiceImplTest {
         fun `throws conflict when all pass codes are used`() {
             // Given
             val passCodes = (500..899).map { code -> "Aikon$code" }
-            given(avatarRepository.findPassUrlsByPassUrlIn(anyPassCodes())).willReturn(passCodes)
+            given(avatarRepository.findAllPassUrls()).willReturn(passCodes)
             val reqDto = createReqDto()
 
             // When
@@ -103,7 +102,7 @@ class CreateAvatarServiceImplTest {
         @DisplayName("패스 코드 중복 저장이 발생하면 409 예외를 던진다")
         fun `throws conflict when pass code save conflicts`() {
             // Given
-            given(avatarRepository.findPassUrlsByPassUrlIn(anyPassCodes())).willReturn(emptyList())
+            given(avatarRepository.findAllPassUrls()).willReturn(emptyList())
             given(avatarRepository.saveAndFlush(anyAvatar()))
                 .willThrow(DataIntegrityViolationException("duplicate pass code"))
             val reqDto = createReqDto()
@@ -122,7 +121,7 @@ class CreateAvatarServiceImplTest {
         @DisplayName("생성 성공 시 이미지 생성 요청과 목록 변경 이벤트를 발행한다")
         fun `publishes image generation and avatar list changed events`() {
             // Given
-            given(avatarRepository.findPassUrlsByPassUrlIn(anyPassCodes())).willReturn(emptyList())
+            given(avatarRepository.findAllPassUrls()).willReturn(emptyList())
             given(avatarRepository.saveAndFlush(anyAvatar())).willReturn(avatar("Aikon500", id = AVATAR_ID))
             val reqDto = createReqDto()
 
@@ -160,11 +159,6 @@ class CreateAvatarServiceImplTest {
                 passUrl = passUrl,
                 id = id,
             )
-
-        private fun anyPassCodes(): Collection<String> {
-            anyCollection<String>()
-            return emptyList()
-        }
 
         private fun anyAvatar(): AvatarEntity {
             any(AvatarEntity::class.java)

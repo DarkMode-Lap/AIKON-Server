@@ -46,7 +46,7 @@ class CreateAvatarServiceImpl(
     }
 
     private fun allocatePassCode(): String {
-        val usedPassCodes = avatarRepository.findPassUrlsByPassUrlIn(ALL_PASS_CODES).toSet()
+        val usedPassCodes = avatarRepository.findAllPassUrls().toSet()
 
         return ALL_PASS_CODES.firstOrNull { it !in usedPassCodes }
             ?: throw AikonException(ErrorCode.AVATAR_PASS_CODE_EXHAUSTED)

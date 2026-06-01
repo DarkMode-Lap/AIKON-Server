@@ -52,19 +52,21 @@ class SubscribeAvatarChangesServiceImpl(
         emitter: SseEmitter,
         avatarChanges: List<AvatarChangeResDto>,
     ) {
-        try {
-            emitter.send(
-                SseEmitter
-                    .event()
-                    .name(EVENT_NAME)
-                    .data(avatarChanges),
-            )
-        } catch (exception: IOException) {
-            logger.warn("Removed failed avatar change emitter {}", exception.message)
-            emitters.remove(emitter)
-        } catch (exception: IllegalStateException) {
-            logger.warn("Removed closed avatar change emitter {}", exception.message)
-            emitters.remove(emitter)
+        synchronized(emitter) {
+            try {
+                emitter.send(
+                    SseEmitter
+                        .event()
+                        .name(EVENT_NAME)
+                        .data(avatarChanges),
+                )
+            } catch (exception: IOException) {
+                logger.warn("Removed failed avatar change emitter {}", exception.message)
+                emitters.remove(emitter)
+            } catch (exception: IllegalStateException) {
+                logger.warn("Removed closed avatar change emitter {}", exception.message)
+                emitters.remove(emitter)
+            }
         }
     }
 
