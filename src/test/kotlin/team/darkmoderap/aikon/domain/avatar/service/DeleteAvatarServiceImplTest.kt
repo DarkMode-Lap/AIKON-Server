@@ -10,11 +10,14 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
+import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
+import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
+import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
+import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
@@ -32,10 +35,10 @@ class DeleteAvatarServiceImplTest {
     @DisplayName("execute 메서드는")
     inner class Execute {
         @Test
-        @DisplayName("아바타가 존재하면 삭제한다")
-        fun `deletes avatar when it exists`() {
+        @DisplayName("아바타가 존재하고 생성 중이 아니면 삭제한다")
+        fun `deletes avatar when it exists and not generating`() {
             // Given
-            val avatar = mock(AvatarEntity::class.java)
+            val avatar = buildAvatar(GenerationStatus.COMPLETED)
             given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
 
             // When
@@ -43,6 +46,24 @@ class DeleteAvatarServiceImplTest {
 
             // Then
             verify(avatarRepository).delete(avatar)
+        }
+
+        @Test
+        @DisplayName("아바타가 생성 중이면 409 예외를 던지고 삭제하지 않는다")
+        fun `throws conflict when avatar is generating`() {
+            // Given
+            val avatar = buildAvatar(GenerationStatus.PROCESSING)
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+
+            // When
+            val exception =
+                assertThrows<AikonException> {
+                    deleteAvatarService.execute(AVATAR_ID)
+                }
+
+            // Then
+            assertEquals(ErrorCode.AVATAR_GENERATION_IN_PROGRESS, exception.errorCode)
+            verify(avatarRepository, never()).delete(any())
         }
 
         @Test
@@ -65,5 +86,14 @@ class DeleteAvatarServiceImplTest {
 
     companion object {
         private const val AVATAR_ID = 1L
+
+        private fun buildAvatar(status: GenerationStatus) =
+            AvatarEntity(
+                nickname = "test",
+                gender = Gender.MALE,
+                style = Style.STUDIO,
+                ageRange = AgeRange.AGE_20_PLUS,
+                generationStatus = status,
+            )
     }
 }

@@ -16,6 +16,11 @@ class DeleteAvatarServiceImpl(
         val avatar =
             avatarRepository.findByIdOrNull(avatarId)
                 ?: throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
+
+        if (avatar.generationStatus.isGenerating()) {
+            throw AikonException(ErrorCode.AVATAR_GENERATION_IN_PROGRESS)
+        }
+
         avatarRepository.delete(avatar)
     }
 }
