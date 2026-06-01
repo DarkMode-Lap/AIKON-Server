@@ -1,9 +1,11 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateAvatarReqDto
+import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
@@ -11,6 +13,7 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 @Service
 class UpdateAvatarServiceImpl(
     private val avatarRepository: AvatarRepository,
+    private val eventPublisher: ApplicationEventPublisher,
 ) : UpdateAvatarService {
     @Transactional
     override fun execute(
@@ -26,5 +29,6 @@ class UpdateAvatarServiceImpl(
         }
 
         avatar.update(reqDto.nickname!!, reqDto.gender!!, reqDto.ageRange!!)
+        eventPublisher.publishEvent(AvatarListChangedEvent())
     }
 }

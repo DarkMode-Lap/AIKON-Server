@@ -33,7 +33,7 @@ class AvatarEntity(
     var generationStatus: GenerationStatus = GenerationStatus.WAITING,
     @Column(name = "image_url")
     var imageUrl: String? = null,
-    @Column(name = "pass_url")
+    @Column(name = "pass_url", unique = true)
     var passUrl: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,5 +47,14 @@ class AvatarEntity(
         this.nickname = nickname
         this.gender = gender
         this.ageRange = ageRange
+    }
+
+    fun completeGeneration(imageUrl: String) {
+        this.imageUrl = imageUrl
+        this.generationStatus = GenerationStatus.COMPLETED
+    }
+
+    fun failGeneration() {
+        this.generationStatus = GenerationStatus.FAILED
     }
 }

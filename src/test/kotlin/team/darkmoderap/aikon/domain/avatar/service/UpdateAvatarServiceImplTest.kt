@@ -6,10 +6,13 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.context.ApplicationEventPublisher
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
@@ -25,6 +28,9 @@ import java.util.Optional
 class UpdateAvatarServiceImplTest {
     @Mock
     private lateinit var avatarRepository: AvatarRepository
+
+    @Mock
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @InjectMocks
     private lateinit var updateAvatarService: UpdateAvatarServiceImpl
@@ -47,6 +53,7 @@ class UpdateAvatarServiceImplTest {
             assertEquals("새이름", avatar.nickname)
             assertEquals(Gender.FEMALE, avatar.gender)
             assertEquals(AgeRange.AGE_20_PLUS, avatar.ageRange)
+            verify(eventPublisher).publishEvent(anyEvent())
         }
 
         @Test
@@ -96,5 +103,10 @@ class UpdateAvatarServiceImplTest {
                 ageRange = AgeRange.AGE_0_7,
                 generationStatus = generationStatus,
             )
+
+        private fun anyEvent(): Any {
+            any(Any::class.java)
+            return Any()
+        }
     }
 }
