@@ -15,21 +15,25 @@ data class ErrorResponse(
     )
 
     companion object {
-        fun of(errorCode: ErrorCode): ErrorResponse =
+        fun of(
+            errorCode: ErrorCode,
+            message: String = errorCode.message,
+        ): ErrorResponse =
             ErrorResponse(
                 status = errorCode.status,
                 code = errorCode.name,
-                message = errorCode.message,
+                message = message,
             )
 
         fun of(
             errorCode: ErrorCode,
             errors: List<FieldError>,
+            message: String = errorCode.message,
         ): ErrorResponse =
             ErrorResponse(
                 status = errorCode.status,
                 code = errorCode.name,
-                message = errorCode.message,
+                message = message,
                 errors = errors,
             )
     }
