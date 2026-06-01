@@ -2,11 +2,13 @@ package team.darkmoderap.aikon.global.common.error.handler
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.validation.BindException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
 import team.darkmoderap.aikon.global.common.error.dto.ErrorResponse
@@ -43,6 +45,20 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(ErrorCode.INVALID_INPUT_VALUE.status)
             .body(ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, errors))
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleHttpMessageNotReadableException(exception: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> {
+        logger.warn("Handled not readable request exception {}", exception.message)
+
+        return createErrorResponse(ErrorCode.INVALID_INPUT_VALUE)
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    fun handleMethodArgumentTypeMismatchException(exception: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
+        logger.warn("Handled type mismatch exception {}", exception.message)
+
+        return createErrorResponse(ErrorCode.INVALID_INPUT_VALUE)
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
