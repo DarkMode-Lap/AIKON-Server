@@ -4,6 +4,8 @@ description: Write JUnit 5 tests for service or controller classes following pro
 allowed-tools: Bash, Read, Edit, Write
 ---
 
+This is the official test skill for this project. When test creation is requested, follow this skill before taking action.
+
 ## Step 1 — Identify What to Test
 
 Read the target class:

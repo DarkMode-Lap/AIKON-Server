@@ -9,6 +9,12 @@ AIKON is a Kotlin/Spring Boot REST API server built by team DarkMode-Lap.
 - Format: `./gradlew ktlintFormat`
 - Run: `./gradlew bootRun`
 
+## Agent Skills
+
+- Claude Code uses `.claude/skills`.
+- Codex uses `.agents/skills`.
+- Commit, PR creation, PR review feedback, and test creation requests must use the matching Claude skill from `.claude/skills` before taking action.
+
 ## Tech Stack
 
 Kotlin, Spring Boot 4.0.6, Spring Security, Spring Data JPA, PostgreSQL
@@ -32,7 +38,9 @@ Detailed rules are split into `.claude/rules/`:
 ## Branch Strategy
 
 Git Flow — feature branches from `develop`, merge back to `develop`.
-Branch naming: `type/kebab-case-description`
+Branch naming: `prefix/kebab-case-description`
+Allowed branch prefixes: `feat/`, `fix/`, `update/`, `add/`, `delete/`, `docs/`, `test/`, `init/`.
+Use `feat/` for feature work even when the commit type is `add`.
 
 ## Context Compaction Rules
 

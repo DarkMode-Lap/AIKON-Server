@@ -41,3 +41,7 @@ out/
 
 ### ENV ###
 .env
+
+### Agent Logs ###
+.claude/command.log
+.codex/command.log
