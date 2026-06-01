@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarResDto
@@ -35,11 +37,12 @@ class AvatarController(
     private val updateDefaultStyleService: UpdateDefaultStyleService,
     private val deleteAvatarService: DeleteAvatarService,
 ) {
-    @PostMapping
+    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     fun createAvatar(
-        @Valid @RequestBody reqDto: CreateAvatarReqDto,
-    ): CreateAvatarResDto = createAvatarService.execute(reqDto)
+        @Valid @RequestPart reqDto: CreateAvatarReqDto,
+        @RequestPart image: MultipartFile,
+    ): CreateAvatarResDto = createAvatarService.execute(reqDto, image)
 
     @GetMapping("/{avatarId}")
     fun getAvatar(

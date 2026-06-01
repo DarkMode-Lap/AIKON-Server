@@ -12,18 +12,18 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.mock.web.MockMultipartFile
+import org.springframework.web.multipart.MultipartFile
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
-import team.darkmoderap.aikon.domain.avatar.event.AvatarImageGenerationRequestedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -33,6 +33,12 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 class CreateAvatarServiceImplTest {
     @Mock
     private lateinit var avatarRepository: AvatarRepository
+
+    @Mock
+    private lateinit var avatarImageGenerator: AvatarImageGenerator
+
+    @Mock
+    private lateinit var avatarImageStorage: AvatarImageStorage
 
     @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
@@ -49,17 +55,21 @@ class CreateAvatarServiceImplTest {
             // Given
             given(avatarRepository.findAllPassUrls()).willReturn(emptyList())
             given(avatarRepository.saveAndFlush(anyAvatar())).willAnswer { invocation -> invocation.arguments[0] }
+            given(avatarImageGenerator.generate(anyImageGenerationCommand()))
+                .willReturn(GeneratedAvatarImage(byteArrayOf(4, 5, 6), "image/png"))
+            given(avatarImageStorage.upload(anyLong(), anyGeneratedImage())).willReturn(IMAGE_URL)
             val reqDto = createReqDto()
 
             // When
-            val result = createAvatarService.execute(reqDto)
+            val result = createAvatarService.execute(reqDto, image())
 
             // Then
             val avatarCaptor = ArgumentCaptor.forClass(AvatarEntity::class.java)
             verify(avatarRepository).saveAndFlush(avatarCaptor.capture())
             assertEquals("Aikon500", avatarCaptor.value.passUrl)
-            assertEquals(GenerationStatus.WAITING, result.generationStatus)
-            verify(eventPublisher, times(2)).publishEvent(anyEvent())
+            assertEquals(GenerationStatus.COMPLETED, result.generationStatus)
+            assertEquals(IMAGE_URL, avatarCaptor.value.imageUrl)
+            verify(eventPublisher).publishEvent(anyEvent())
         }
 
         @Test
@@ -69,10 +79,13 @@ class CreateAvatarServiceImplTest {
             given(avatarRepository.findAllPassUrls())
                 .willReturn(listOf("Aikon500", "Aikon501"))
             given(avatarRepository.saveAndFlush(anyAvatar())).willAnswer { invocation -> invocation.arguments[0] }
+            given(avatarImageGenerator.generate(anyImageGenerationCommand()))
+                .willReturn(GeneratedAvatarImage(byteArrayOf(4, 5, 6), "image/png"))
+            given(avatarImageStorage.upload(anyLong(), anyGeneratedImage())).willReturn(IMAGE_URL)
             val reqDto = createReqDto()
 
             // When
-            createAvatarService.execute(reqDto)
+            createAvatarService.execute(reqDto, image())
 
             // Then
             val avatarCaptor = ArgumentCaptor.forClass(AvatarEntity::class.java)
@@ -91,7 +104,7 @@ class CreateAvatarServiceImplTest {
             // When
             val exception =
                 assertThrows<AikonException> {
-                    createAvatarService.execute(reqDto)
+                    createAvatarService.execute(reqDto, image())
                 }
 
             // Then
@@ -110,7 +123,7 @@ class CreateAvatarServiceImplTest {
             // When
             val exception =
                 assertThrows<AikonException> {
-                    createAvatarService.execute(reqDto)
+                    createAvatarService.execute(reqDto, image())
                 }
 
             // Then
@@ -118,26 +131,82 @@ class CreateAvatarServiceImplTest {
         }
 
         @Test
-        @DisplayName("생성 성공 시 이미지 생성 요청과 목록 변경 이벤트를 발행한다")
-        fun `publishes image generation and avatar list changed events`() {
+        @DisplayName("생성 성공 시 이미지 생성 결과를 저장하고 목록 변경 이벤트를 발행한다")
+        fun `stores generated image and publishes avatar list changed event`() {
             // Given
             given(avatarRepository.findAllPassUrls()).willReturn(emptyList())
             given(avatarRepository.saveAndFlush(anyAvatar())).willReturn(avatar("Aikon500", id = AVATAR_ID))
+            given(avatarImageGenerator.generate(anyImageGenerationCommand()))
+                .willReturn(GeneratedAvatarImage(byteArrayOf(4, 5, 6), "image/png"))
+            given(avatarImageStorage.upload(anyLong(), anyGeneratedImage())).willReturn(IMAGE_URL)
             val reqDto = createReqDto()
 
             // When
-            createAvatarService.execute(reqDto)
+            val result = createAvatarService.execute(reqDto, image())
 
             // Then
             val eventCaptor = ArgumentCaptor.forClass(Any::class.java)
-            verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture())
-            assertTrue(eventCaptor.allValues.any { event -> event is AvatarImageGenerationRequestedEvent })
+            verify(eventPublisher).publishEvent(eventCaptor.capture())
             assertTrue(eventCaptor.allValues.any { event -> event is AvatarListChangedEvent })
+            assertEquals(GenerationStatus.COMPLETED, result.generationStatus)
+        }
+
+        @Test
+        @DisplayName("이미지 생성에 실패하면 실패 상태를 반환하고 목록 변경 이벤트를 발행한다")
+        fun `returns failed when image generation fails`() {
+            // Given
+            given(avatarRepository.findAllPassUrls()).willReturn(emptyList())
+            given(avatarRepository.saveAndFlush(anyAvatar())).willAnswer { invocation -> invocation.arguments[0] }
+            given(avatarImageGenerator.generate(anyImageGenerationCommand()))
+                .willThrow(AikonException(ErrorCode.AVATAR_IMAGE_GENERATION_FAILED))
+            val reqDto = createReqDto()
+
+            // When
+            val result = createAvatarService.execute(reqDto, image())
+
+            // Then
+            assertEquals(GenerationStatus.FAILED, result.generationStatus)
+            verify(eventPublisher).publishEvent(anyEvent())
+        }
+
+        @Test
+        @DisplayName("이미지 파일이 비어 있으면 400 예외를 던진다")
+        fun `throws invalid input when image is empty`() {
+            // Given
+            val reqDto = createReqDto()
+            val image = MockMultipartFile("image", "avatar.png", "image/png", byteArrayOf())
+
+            // When
+            val exception =
+                assertThrows<AikonException> {
+                    createAvatarService.execute(reqDto, image)
+                }
+
+            // Then
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.errorCode)
+        }
+
+        @Test
+        @DisplayName("이미지 콘텐츠 타입이 아니면 400 예외를 던진다")
+        fun `throws invalid input when content type is not image`() {
+            // Given
+            val reqDto = createReqDto()
+            val image = MockMultipartFile("image", "avatar.txt", "text/plain", byteArrayOf(1, 2, 3))
+
+            // When
+            val exception =
+                assertThrows<AikonException> {
+                    createAvatarService.execute(reqDto, image)
+                }
+
+            // Then
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.errorCode)
         }
     }
 
     companion object {
         private const val AVATAR_ID = 1L
+        private const val IMAGE_URL = "https://cdn.example.com/avatars/1.png"
 
         private fun createReqDto(): CreateAvatarReqDto =
             CreateAvatarReqDto(
@@ -164,6 +233,33 @@ class CreateAvatarServiceImplTest {
             any(AvatarEntity::class.java)
             return avatar("Aikon500")
         }
+
+        private fun anyLong(): Long {
+            org.mockito.ArgumentMatchers.anyLong()
+            return 0L
+        }
+
+        private fun anyImageGenerationCommand(): AvatarImageGenerationCommand {
+            any(AvatarImageGenerationCommand::class.java)
+            return AvatarImageGenerationCommand(
+                style = Style.GHIBLI,
+                sourceImage = byteArrayOf(1, 2, 3),
+                sourceMimeType = "image/png",
+            )
+        }
+
+        private fun anyGeneratedImage(): GeneratedAvatarImage {
+            any(GeneratedAvatarImage::class.java)
+            return GeneratedAvatarImage(byteArrayOf(4, 5, 6), "image/png")
+        }
+
+        private fun image(): MultipartFile =
+            MockMultipartFile(
+                "image",
+                "avatar.png",
+                "image/png",
+                byteArrayOf(1, 2, 3),
+            )
 
         private fun anyEvent(): Any {
             any(Any::class.java)

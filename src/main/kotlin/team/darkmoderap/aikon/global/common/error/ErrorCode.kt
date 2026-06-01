@@ -11,4 +11,5 @@ enum class ErrorCode(
     AVATAR_GENERATION_IN_PROGRESS("아바타가 생성 중이므로 수정할 수 없습니다.", 409),
     AVATAR_PASS_CODE_EXHAUSTED("사용 가능한 아바타 패스 코드가 없습니다.", 409),
     AVATAR_PASS_CODE_ASSIGNMENT_FAILED("아바타 패스 코드 배정에 실패하였습니다.", 409),
+    AVATAR_IMAGE_GENERATION_FAILED("아바타 이미지 생성에 실패하였습니다.", 502),
 }

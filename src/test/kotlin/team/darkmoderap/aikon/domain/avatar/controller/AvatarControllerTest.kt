@@ -10,14 +10,16 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.springframework.http.MediaType
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarResDto
@@ -68,55 +70,53 @@ class AvatarControllerTest {
         fun `returns 201 when request is valid`() {
             // Given
             Mockito
-                .`when`(createAvatarService.execute(anyCreateReqDto()))
-                .thenReturn(CreateAvatarResDto(id = AVATAR_ID, generationStatus = GenerationStatus.WAITING))
-            val body = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI","ageRange":"AGE_20_PLUS"}"""
+                .`when`(createAvatarService.execute(anyCreateReqDto(), anyImage()))
+                .thenReturn(CreateAvatarResDto(id = AVATAR_ID, generationStatus = GenerationStatus.COMPLETED))
 
             // When & Then
             mockMvc
                 .perform(
-                    post("/avatars")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
+                    multipart("/avatars")
+                        .file(reqDtoPart())
+                        .file(imagePart()),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").value(AVATAR_ID))
-                .andExpect(jsonPath("$.generationStatus").value("WAITING"))
+                .andExpect(jsonPath("$.generationStatus").value("COMPLETED"))
 
-            verify(createAvatarService).execute(anyCreateReqDto())
+            verify(createAvatarService).execute(anyCreateReqDto(), anyImage())
         }
 
         @Test
-        @DisplayName("필수 필드가 누락되면 400을 반환하고 서비스를 호출하지 않는다")
-        fun `returns 400 when required field is missing`() {
+        @DisplayName("이미지 파트가 누락되면 400을 반환하고 서비스를 호출하지 않는다")
+        fun `returns 400 when image part is missing`() {
             // Given
-            val body = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI"}"""
+            val reqDto = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI","ageRange":"AGE_20_PLUS"}"""
 
             // When & Then
             mockMvc
                 .perform(
-                    post("/avatars")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
+                    multipart("/avatars")
+                        .file(reqDtoPart(reqDto)),
                 ).andExpect(status().isBadRequest)
 
-            verify(createAvatarService, never()).execute(anyCreateReqDto())
+            verify(createAvatarService, never()).execute(anyCreateReqDto(), anyImage())
         }
 
         @Test
         @DisplayName("잘못된 enum 값이면 400을 반환하고 서비스를 호출하지 않는다")
         fun `returns 400 when enum value is invalid`() {
             // Given
-            val body = """{"nickname":"새아바타","gender":"UNKNOWN","style":"GHIBLI","ageRange":"AGE_20_PLUS"}"""
+            val reqDto = """{"nickname":"새아바타","gender":"UNKNOWN","style":"GHIBLI","ageRange":"AGE_20_PLUS"}"""
 
             // When & Then
             mockMvc
                 .perform(
-                    post("/avatars")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
+                    multipart("/avatars")
+                        .file(reqDtoPart(reqDto))
+                        .file(imagePart()),
                 ).andExpect(status().isBadRequest)
 
-            verify(createAvatarService, never()).execute(anyCreateReqDto())
+            verify(createAvatarService, never()).execute(anyCreateReqDto(), anyImage())
         }
     }
 
@@ -404,6 +404,29 @@ class AvatarControllerTest {
                 ageRange = AgeRange.AGE_0_7,
             )
         }
+
+        private fun anyImage(): MultipartFile {
+            Mockito.any(MultipartFile::class.java)
+            return imagePart()
+        }
+
+        private fun reqDtoPart(
+            content: String = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI","ageRange":"AGE_20_PLUS"}""",
+        ): MockMultipartFile =
+            MockMultipartFile(
+                "reqDto",
+                "",
+                MediaType.APPLICATION_JSON_VALUE,
+                content.toByteArray(),
+            )
+
+        private fun imagePart(): MockMultipartFile =
+            MockMultipartFile(
+                "image",
+                "avatar.png",
+                MediaType.IMAGE_PNG_VALUE,
+                byteArrayOf(1, 2, 3),
+            )
 
         private fun anyReqDto(): UpdateAvatarReqDto {
             Mockito.any(UpdateAvatarReqDto::class.java)

@@ -48,4 +48,13 @@ class AvatarEntity(
         this.gender = gender
         this.ageRange = ageRange
     }
+
+    fun completeGeneration(imageUrl: String) {
+        this.imageUrl = imageUrl
+        this.generationStatus = GenerationStatus.COMPLETED
+    }
+
+    fun failGeneration() {
+        this.generationStatus = GenerationStatus.FAILED
+    }
 }
