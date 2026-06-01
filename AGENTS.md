@@ -29,12 +29,13 @@ Each domain follows: `controller/`, `service/`, `repository/`, `entity/`, `dto/`
 
 ## Agent Skills
 
-- The official project skill directory is `.agents/skills`.
+- Codex uses `.agents/skills`.
+- Claude Code uses `.claude/skills`.
 - For commit requests, read and follow `.agents/skills/commit/SKILL.md` before running any commit command.
 - For PR creation requests, read and follow `.agents/skills/write-pr/SKILL.md`.
 - For PR review feedback requests, read and follow `.agents/skills/review-pr/SKILL.md`.
 - For test creation requests, read and follow `.agents/skills/test/SKILL.md`.
-- If a global skill under `~/.codex/skills` has the same name, prefer this project's `.agents/skills` version.
+- If a global Codex skill under `~/.codex/skills` has the same name, prefer this project's `.agents/skills` version.
 
 ## Coding Conventions
 

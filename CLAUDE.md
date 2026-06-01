@@ -11,9 +11,9 @@ AIKON is a Kotlin/Spring Boot REST API server built by team DarkMode-Lap.
 
 ## Agent Skills
 
-- The official project skill directory is `.agents/skills`.
-- Commit, PR creation, PR review feedback, and test creation requests must use the matching skill from `.agents/skills` before taking action.
-- Prefer `.agents/skills` over duplicated global skills with the same name.
+- Claude Code uses `.claude/skills`.
+- Codex uses `.agents/skills`.
+- Commit, PR creation, PR review feedback, and test creation requests must use the matching Claude skill from `.claude/skills` before taking action.
 
 ## Tech Stack
 
