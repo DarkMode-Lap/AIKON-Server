@@ -9,6 +9,10 @@ spring:
     hibernate:
       ddl-auto: ${DDL_AUTO}
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
 gemini:
   api-key: ${GEMINI_API_KEY:}
   image-model: ${GEMINI_IMAGE_MODEL:gemini-2.5-flash-image}
