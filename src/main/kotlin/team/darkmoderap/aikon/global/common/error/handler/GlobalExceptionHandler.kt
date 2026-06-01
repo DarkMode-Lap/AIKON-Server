@@ -1,6 +1,5 @@
 package team.darkmoderap.aikon.global.common.error.handler
 
-import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -9,11 +8,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
 import team.darkmoderap.aikon.global.common.error.dto.ErrorResponse
+import team.darkmoderap.aikon.global.common.logging.Logging
 
 @RestControllerAdvice
-class GlobalExceptionHandler {
-    private val logger = LoggerFactory.getLogger(GlobalExceptionHandler::class.java)
-
+class GlobalExceptionHandler : Logging {
     @ExceptionHandler(AikonException::class)
     fun handleAikonException(exception: AikonException): ResponseEntity<ErrorResponse> {
         logger.warn("Handled application exception {}", exception.errorCode.name)
