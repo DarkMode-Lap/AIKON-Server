@@ -5,4 +5,6 @@ interface AvatarImageStorage {
         avatarId: Long,
         image: GeneratedAvatarImage,
     ): String
+
+    fun delete(imageUrl: String)
 }

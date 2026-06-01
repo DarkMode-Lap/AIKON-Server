@@ -30,6 +30,9 @@ class DeleteAvatarServiceImplTest {
     private lateinit var avatarRepository: AvatarRepository
 
     @Mock
+    private lateinit var avatarImageStorage: AvatarImageStorage
+
+    @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
 
     @InjectMocks
@@ -42,6 +45,22 @@ class DeleteAvatarServiceImplTest {
         @DisplayName("아바타가 존재하고 생성 중이 아니면 삭제한다")
         fun `deletes avatar when it exists and not generating`() {
             // Given
+            val avatar = buildAvatar(GenerationStatus.COMPLETED, IMAGE_URL)
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+
+            // When
+            deleteAvatarService.execute(AVATAR_ID)
+
+            // Then
+            verify(avatarImageStorage).delete(IMAGE_URL)
+            verify(avatarRepository).delete(avatar)
+            verify(eventPublisher).publishEvent(anyEvent())
+        }
+
+        @Test
+        @DisplayName("이미지가 없으면 스토리지 삭제 없이 아바타를 삭제한다")
+        fun `deletes avatar without storage delete when image does not exist`() {
+            // Given
             val avatar = buildAvatar(GenerationStatus.COMPLETED)
             given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
 
@@ -49,8 +68,31 @@ class DeleteAvatarServiceImplTest {
             deleteAvatarService.execute(AVATAR_ID)
 
             // Then
+            verify(avatarImageStorage, never()).delete(anyString())
             verify(avatarRepository).delete(avatar)
             verify(eventPublisher).publishEvent(anyEvent())
+        }
+
+        @Test
+        @DisplayName("이미지 삭제에 실패하면 502 예외를 던지고 아바타를 삭제하지 않는다")
+        fun `throws bad gateway when image delete fails`() {
+            // Given
+            val avatar = buildAvatar(GenerationStatus.COMPLETED, IMAGE_URL)
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+            org.mockito.BDDMockito
+                .willThrow(RuntimeException("delete failed"))
+                .given(avatarImageStorage)
+                .delete(IMAGE_URL)
+
+            // When
+            val exception =
+                assertThrows<AikonException> {
+                    deleteAvatarService.execute(AVATAR_ID)
+                }
+
+            // Then
+            assertEquals(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, exception.errorCode)
+            verify(avatarRepository, never()).delete(any())
         }
 
         @Test
@@ -91,19 +133,28 @@ class DeleteAvatarServiceImplTest {
 
     companion object {
         private const val AVATAR_ID = 1L
+        private const val IMAGE_URL = "https://cdn.example.com/avatars/1.png"
 
-        private fun buildAvatar(status: GenerationStatus) =
-            AvatarEntity(
-                nickname = "test",
-                gender = Gender.MALE,
-                style = Style.STUDIO,
-                ageRange = AgeRange.AGE_20_PLUS,
-                generationStatus = status,
-            )
+        private fun buildAvatar(
+            status: GenerationStatus,
+            imageUrl: String? = null,
+        ) = AvatarEntity(
+            nickname = "test",
+            gender = Gender.MALE,
+            style = Style.STUDIO,
+            ageRange = AgeRange.AGE_20_PLUS,
+            generationStatus = status,
+            imageUrl = imageUrl,
+        )
 
         private fun anyEvent(): Any {
             any(Any::class.java)
             return Any()
+        }
+
+        private fun anyString(): String {
+            org.mockito.ArgumentMatchers.anyString()
+            return ""
         }
     }
 }

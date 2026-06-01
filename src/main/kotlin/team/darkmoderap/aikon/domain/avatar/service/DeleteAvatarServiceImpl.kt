@@ -12,6 +12,7 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 @Service
 class DeleteAvatarServiceImpl(
     private val avatarRepository: AvatarRepository,
+    private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
 ) : DeleteAvatarService {
     @Transactional
@@ -24,7 +25,20 @@ class DeleteAvatarServiceImpl(
             throw AikonException(ErrorCode.AVATAR_GENERATION_IN_PROGRESS)
         }
 
+        deleteImageIfExists(avatar.imageUrl)
         avatarRepository.delete(avatar)
         eventPublisher.publishEvent(AvatarListChangedEvent())
+    }
+
+    private fun deleteImageIfExists(imageUrl: String?) {
+        if (imageUrl == null) {
+            return
+        }
+
+        try {
+            avatarImageStorage.delete(imageUrl)
+        } catch (exception: Exception) {
+            throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, cause = exception)
+        }
     }
 }
