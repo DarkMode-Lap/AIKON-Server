@@ -33,7 +33,7 @@ class AvatarEntity(
     var generationStatus: GenerationStatus = GenerationStatus.WAITING,
     @Column(name = "image_url")
     var imageUrl: String? = null,
-    @Column(name = "pass_url")
+    @Column(name = "pass_url", unique = true)
     var passUrl: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

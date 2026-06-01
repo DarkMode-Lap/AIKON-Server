@@ -10,4 +10,5 @@ enum class ErrorCode(
     AVATAR_NOT_FOUND("아바타를 찾을 수 없습니다.", 404),
     AVATAR_GENERATION_IN_PROGRESS("아바타가 생성 중이므로 수정할 수 없습니다.", 409),
     AVATAR_PASS_CODE_EXHAUSTED("사용 가능한 아바타 패스 코드가 없습니다.", 409),
+    AVATAR_PASS_CODE_ASSIGNMENT_FAILED("아바타 패스 코드 배정에 실패하였습니다.", 409),
 }

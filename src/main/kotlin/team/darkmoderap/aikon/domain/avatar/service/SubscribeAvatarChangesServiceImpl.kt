@@ -1,6 +1,7 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
 import org.slf4j.LoggerFactory
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
@@ -34,6 +35,8 @@ class SubscribeAvatarChangesServiceImpl(
         return emitter
     }
 
+    @Async
+    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handleAvatarListChanged(event: AvatarListChangedEvent) {
         val avatarChanges = findAvatarChanges()

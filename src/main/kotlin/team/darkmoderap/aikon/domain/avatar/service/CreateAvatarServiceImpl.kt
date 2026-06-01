@@ -1,6 +1,7 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
@@ -21,15 +22,19 @@ class CreateAvatarServiceImpl(
     override fun execute(reqDto: CreateAvatarReqDto): CreateAvatarResDto {
         val passCode = allocatePassCode()
         val avatar =
-            avatarRepository.save(
-                AvatarEntity(
-                    nickname = reqDto.nickname!!,
-                    gender = reqDto.gender!!,
-                    style = reqDto.style!!,
-                    ageRange = reqDto.ageRange!!,
-                    passUrl = passCode,
-                ),
-            )
+            try {
+                avatarRepository.saveAndFlush(
+                    AvatarEntity(
+                        nickname = reqDto.nickname!!,
+                        gender = reqDto.gender!!,
+                        style = reqDto.style!!,
+                        ageRange = reqDto.ageRange!!,
+                        passUrl = passCode,
+                    ),
+                )
+            } catch (exception: DataIntegrityViolationException) {
+                throw AikonException(ErrorCode.AVATAR_PASS_CODE_ASSIGNMENT_FAILED, cause = exception)
+            }
 
         eventPublisher.publishEvent(AvatarImageGenerationRequestedEvent(avatar.id))
         eventPublisher.publishEvent(AvatarListChangedEvent())
@@ -41,15 +46,15 @@ class CreateAvatarServiceImpl(
     }
 
     private fun allocatePassCode(): String {
-        val passCodes = PASS_CODE_RANGE.map { "$PASS_CODE_PREFIX$it" }
-        val usedPassCodes = avatarRepository.findAllByPassUrlIn(passCodes).mapNotNull { it.passUrl }.toSet()
+        val usedPassCodes = avatarRepository.findPassUrlsByPassUrlIn(ALL_PASS_CODES).toSet()
 
-        return passCodes.firstOrNull { it !in usedPassCodes }
+        return ALL_PASS_CODES.firstOrNull { it !in usedPassCodes }
             ?: throw AikonException(ErrorCode.AVATAR_PASS_CODE_EXHAUSTED)
     }
 
     companion object {
         private const val PASS_CODE_PREFIX = "Aikon"
         private val PASS_CODE_RANGE = 500..899
+        private val ALL_PASS_CODES = PASS_CODE_RANGE.map { "$PASS_CODE_PREFIX$it" }
     }
 }
