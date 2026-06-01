@@ -13,9 +13,9 @@ import org.mockito.Mockito.anyLong
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
-import org.springframework.http.HttpStatus
-import org.springframework.web.server.ResponseStatusException
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
+import team.darkmoderap.aikon.global.common.error.AikonException
+import team.darkmoderap.aikon.global.common.error.ErrorCode
 
 @ExtendWith(MockitoExtension::class)
 class DeleteAvatarServiceImplTest {
@@ -49,12 +49,12 @@ class DeleteAvatarServiceImplTest {
 
             // When
             val exception =
-                assertThrows<ResponseStatusException> {
+                assertThrows<AikonException> {
                     deleteAvatarService.execute(AVATAR_ID)
                 }
 
             // Then
-            assertEquals(HttpStatus.NOT_FOUND.value(), exception.statusCode.value())
+            assertEquals(ErrorCode.AVATAR_NOT_FOUND, exception.errorCode)
             verify(avatarRepository, never()).deleteById(anyLong())
         }
     }

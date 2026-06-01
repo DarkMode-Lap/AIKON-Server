@@ -10,8 +10,6 @@ import org.mockito.BDDMockito.given
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
-import org.springframework.http.HttpStatus
-import org.springframework.web.server.ResponseStatusException
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
@@ -19,6 +17,8 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
+import team.darkmoderap.aikon.global.common.error.AikonException
+import team.darkmoderap.aikon.global.common.error.ErrorCode
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -58,12 +58,12 @@ class UpdateAvatarServiceImplTest {
 
             // When
             val exception =
-                assertThrows<ResponseStatusException> {
+                assertThrows<AikonException> {
                     updateAvatarService.execute(AVATAR_ID, reqDto)
                 }
 
             // Then
-            assertEquals(HttpStatus.NOT_FOUND.value(), exception.statusCode.value())
+            assertEquals(ErrorCode.AVATAR_NOT_FOUND, exception.errorCode)
         }
 
         @Test
@@ -76,12 +76,12 @@ class UpdateAvatarServiceImplTest {
 
             // When
             val exception =
-                assertThrows<ResponseStatusException> {
+                assertThrows<AikonException> {
                     updateAvatarService.execute(AVATAR_ID, reqDto)
                 }
 
             // Then
-            assertEquals(HttpStatus.CONFLICT.value(), exception.statusCode.value())
+            assertEquals(ErrorCode.AVATAR_GENERATION_IN_PROGRESS, exception.errorCode)
         }
     }
 

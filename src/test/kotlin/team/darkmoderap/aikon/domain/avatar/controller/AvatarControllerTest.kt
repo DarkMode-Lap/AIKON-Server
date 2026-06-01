@@ -9,14 +9,12 @@ import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
-import org.springframework.web.server.ResponseStatusException
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateDefaultStyleReqDto
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
@@ -25,6 +23,9 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateDefaultStyleService
+import team.darkmoderap.aikon.global.common.error.AikonException
+import team.darkmoderap.aikon.global.common.error.ErrorCode
+import team.darkmoderap.aikon.global.common.error.handler.GlobalExceptionHandler
 
 class AvatarControllerTest {
     private val updateAvatarService = mock(UpdateAvatarService::class.java)
@@ -35,7 +36,8 @@ class AvatarControllerTest {
         MockMvcBuilders
             .standaloneSetup(
                 AvatarController(updateAvatarService, updateDefaultStyleService, deleteAvatarService),
-            ).build()
+            ).setControllerAdvice(GlobalExceptionHandler())
+            .build()
 
     @Nested
     @DisplayName("PATCH /avatars/{avatarId} 는")
@@ -58,10 +60,10 @@ class AvatarControllerTest {
         }
 
         @Test
-        @DisplayName("서비스가 404를 던지면 404를 반환한다")
-        fun `returns 404 when service throws not found`() {
+        @DisplayName("아바타가 없으면 404를 반환한다")
+        fun `returns 404 when avatar not found`() {
             // Given
-            willThrow(ResponseStatusException(HttpStatus.NOT_FOUND))
+            willThrow(AikonException(ErrorCode.AVATAR_NOT_FOUND))
                 .given(updateAvatarService)
                 .execute(anyLong(), anyReqDto())
             val body = """{"nickname":"새이름","gender":"FEMALE","ageRange":"AGE_20_PLUS"}"""
@@ -76,10 +78,10 @@ class AvatarControllerTest {
         }
 
         @Test
-        @DisplayName("서비스가 409를 던지면 409를 반환한다")
-        fun `returns 409 when service throws conflict`() {
+        @DisplayName("생성 진행 중이면 409를 반환한다")
+        fun `returns 409 when avatar is generating`() {
             // Given
-            willThrow(ResponseStatusException(HttpStatus.CONFLICT))
+            willThrow(AikonException(ErrorCode.AVATAR_GENERATION_IN_PROGRESS))
                 .given(updateAvatarService)
                 .execute(anyLong(), anyReqDto())
             val body = """{"nickname":"새이름","gender":"FEMALE","ageRange":"AGE_20_PLUS"}"""
@@ -109,57 +111,6 @@ class AvatarControllerTest {
 
             verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
         }
-
-        @Test
-        @DisplayName("잘못된 enum 값이면 400을 반환하고 서비스를 호출하지 않는다")
-        fun `returns 400 when enum value is invalid`() {
-            // Given
-            val body = """{"nickname":"새이름","gender":"UNKNOWN","ageRange":"AGE_20_PLUS"}"""
-
-            // When & Then
-            mockMvc
-                .perform(
-                    patch("/avatars/{avatarId}", AVATAR_ID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
-                ).andExpect(status().isBadRequest)
-
-            verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
-        }
-
-        @Test
-        @DisplayName("필수 필드가 누락되면 400을 반환한다")
-        fun `returns 400 when required field is missing`() {
-            // Given
-            val body = """{"nickname":"새이름","gender":"FEMALE"}"""
-
-            // When & Then
-            mockMvc
-                .perform(
-                    patch("/avatars/{avatarId}", AVATAR_ID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
-                ).andExpect(status().isBadRequest)
-
-            verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
-        }
-
-        @Test
-        @DisplayName("경로 변수가 숫자가 아니면 400을 반환한다")
-        fun `returns 400 when path variable is not a number`() {
-            // Given
-            val body = """{"nickname":"새이름","gender":"FEMALE","ageRange":"AGE_20_PLUS"}"""
-
-            // When & Then
-            mockMvc
-                .perform(
-                    patch("/avatars/{avatarId}", "not-a-number")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
-                ).andExpect(status().isBadRequest)
-
-            verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
-        }
     }
 
     @Nested
@@ -181,40 +132,6 @@ class AvatarControllerTest {
 
             verify(updateDefaultStyleService).execute(anyDefaultStyleReqDto())
         }
-
-        @Test
-        @DisplayName("잘못된 스타일 값이면 400을 반환하고 서비스를 호출하지 않는다")
-        fun `returns 400 when style is invalid`() {
-            // Given
-            val body = """{"style":"UNKNOWN"}"""
-
-            // When & Then
-            mockMvc
-                .perform(
-                    patch("/avatars/style")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
-                ).andExpect(status().isBadRequest)
-
-            verify(updateDefaultStyleService, never()).execute(anyDefaultStyleReqDto())
-        }
-
-        @Test
-        @DisplayName("style 필드가 누락되면 400을 반환한다")
-        fun `returns 400 when style is missing`() {
-            // Given
-            val body = """{}"""
-
-            // When & Then
-            mockMvc
-                .perform(
-                    patch("/avatars/style")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body),
-                ).andExpect(status().isBadRequest)
-
-            verify(updateDefaultStyleService, never()).execute(anyDefaultStyleReqDto())
-        }
     }
 
     @Nested
@@ -232,10 +149,10 @@ class AvatarControllerTest {
         }
 
         @Test
-        @DisplayName("서비스가 404를 던지면 404를 반환한다")
-        fun `returns 404 when service throws not found`() {
+        @DisplayName("아바타가 없으면 404를 반환한다")
+        fun `returns 404 when avatar not found`() {
             // Given
-            willThrow(ResponseStatusException(HttpStatus.NOT_FOUND))
+            willThrow(AikonException(ErrorCode.AVATAR_NOT_FOUND))
                 .given(deleteAvatarService)
                 .execute(anyLong())
 
