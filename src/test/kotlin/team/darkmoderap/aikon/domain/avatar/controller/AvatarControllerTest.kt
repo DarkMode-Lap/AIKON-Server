@@ -111,6 +111,57 @@ class AvatarControllerTest {
 
             verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
         }
+
+        @Test
+        @DisplayName("잘못된 enum 값이면 400을 반환하고 서비스를 호출하지 않는다")
+        fun `returns 400 when enum value is invalid`() {
+            // Given
+            val body = """{"nickname":"새이름","gender":"UNKNOWN","ageRange":"AGE_20_PLUS"}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    patch("/avatars/{avatarId}", AVATAR_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+
+            verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
+        }
+
+        @Test
+        @DisplayName("필수 필드가 누락되면 400을 반환한다")
+        fun `returns 400 when required field is missing`() {
+            // Given
+            val body = """{"nickname":"새이름","gender":"FEMALE"}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    patch("/avatars/{avatarId}", AVATAR_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+
+            verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
+        }
+
+        @Test
+        @DisplayName("경로 변수가 숫자가 아니면 400을 반환한다")
+        fun `returns 400 when path variable is not a number`() {
+            // Given
+            val body = """{"nickname":"새이름","gender":"FEMALE","ageRange":"AGE_20_PLUS"}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    patch("/avatars/{avatarId}", "not-a-number")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+
+            verify(updateAvatarService, never()).execute(anyLong(), anyReqDto())
+        }
     }
 
     @Nested
@@ -131,6 +182,40 @@ class AvatarControllerTest {
                 ).andExpect(status().isNoContent)
 
             verify(updateDefaultStyleService).execute(anyDefaultStyleReqDto())
+        }
+
+        @Test
+        @DisplayName("잘못된 스타일 값이면 400을 반환하고 서비스를 호출하지 않는다")
+        fun `returns 400 when style is invalid`() {
+            // Given
+            val body = """{"style":"UNKNOWN"}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    patch("/avatars/style")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+
+            verify(updateDefaultStyleService, never()).execute(anyDefaultStyleReqDto())
+        }
+
+        @Test
+        @DisplayName("style 필드가 누락되면 400을 반환한다")
+        fun `returns 400 when style is missing`() {
+            // Given
+            val body = """{}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    patch("/avatars/style")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+
+            verify(updateDefaultStyleService, never()).execute(anyDefaultStyleReqDto())
         }
     }
 
