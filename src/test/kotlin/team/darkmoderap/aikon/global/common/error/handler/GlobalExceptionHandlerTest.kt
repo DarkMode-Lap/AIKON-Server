@@ -3,9 +3,7 @@ package team.darkmoderap.aikon.global.common.error.handler
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.springframework.http.MediaType
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.validation.BeanPropertyBindingResult
@@ -117,22 +115,6 @@ class GlobalExceptionHandlerTest {
             assertEquals(errorCode.status, response.body?.status)
             assertEquals(errorCode.name, response.body?.code)
             assertEquals(errorCode.message, response.body?.message)
-        }
-    }
-
-    @Nested
-    @DisplayName("AccessDeniedException 예외 처리는")
-    inner class HandleAccessDeniedException {
-        @Test
-        @DisplayName("스프링 시큐리티 처리를 위해 예외를 다시 던진다")
-        fun `rethrows access denied exception`() {
-            // Given
-            val exception = AccessDeniedException("Access denied")
-
-            // When & Then
-            assertThrows<AccessDeniedException> {
-                exceptionHandler.handleAccessDeniedException(exception)
-            }
         }
     }
 

@@ -3,7 +3,6 @@ package team.darkmoderap.aikon.global.common.error.handler
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.validation.BindException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -94,9 +93,6 @@ class GlobalExceptionHandler {
 
         return createErrorResponse(ErrorCode.METHOD_NOT_ALLOWED)
     }
-
-    @ExceptionHandler(AccessDeniedException::class)
-    fun handleAccessDeniedException(exception: AccessDeniedException): Nothing = throw exception
 
     @ExceptionHandler(Exception::class)
     fun handleException(exception: Exception): ResponseEntity<ErrorResponse> {
