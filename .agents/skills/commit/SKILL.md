@@ -4,6 +4,8 @@ description: Create Git commits by splitting changes into logical units followin
 allowed-tools: Bash
 ---
 
+This is the official commit skill for this project. When a commit is requested, follow this skill before running any commit command.
+
 ## Step 0 — Branch Check (Required)
 
 Check the current branch first:
@@ -18,12 +20,14 @@ This project uses Git Flow. Feature branches must be created from `develop` and 
 
 1. Analyze all changes with `git status` and `git diff`
 2. Infer an appropriate branch name from the changes:
-   - Format: `type/kebab-case-description` — use the same type as the planned commit (exception: use `cicd/` for `ci/cd` type)
+   - Format: `prefix/kebab-case-description`
+   - Allowed prefixes: `feat/`, `fix/`, `update/`, `add/`, `delete/`, `docs/`, `test/`, `init/`
+   - Branch prefixes are independent from commit message types. Use `feat/` for feature work even when the commit type is `add`
    - Reflect the domain in the name
-   - Examples: `add/add-jwt-auth`, `fix/user-query-bug`, `update/optimize-post-query`
+   - Examples: `feat/jwt-auth`, `fix/user-query-bug`, `update/optimize-post-query`
 3. Create and checkout the branch:
    ```bash
-   git checkout -b type/inferred-name
+   git checkout -b prefix/inferred-name
    ```
 4. Proceed with the commit flow below
 

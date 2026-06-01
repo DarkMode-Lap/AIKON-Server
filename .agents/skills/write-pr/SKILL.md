@@ -4,6 +4,8 @@ description: Write a GitHub Pull Request title and body based on the commits and
 allowed-tools: Bash, Read
 ---
 
+This is the official PR writing skill for this project. When PR creation is requested, follow this skill before taking action.
+
 ## Step 1 — Collect Branch Info
 
 ```bash
@@ -58,3 +60,39 @@ Follow `.github/PULL_REQUEST_TEMPLATE.md` exactly:
 - Body: Korean, focus on "why" not just "what"
 - 체크리스트는 항목 그대로 유지 — 체크 여부는 작성자가 직접 판단
 - Do NOT include file names in the body unless critical context
+
+## Step 4 — Collect Repo Meta
+
+```bash
+gh api user --jq '.login'
+gh label list
+```
+
+### Reviewer Rules
+
+- Always request reviewers when creating a PR.
+- Fixed reviewer candidates: `cfcromn`, `jyx-07`
+- Exclude the current GitHub user from reviewer candidates.
+- If no reviewer remains after exclusion, omit the reviewer flag.
+
+### Label Rules
+
+- Use 1–3 labels only when matching labels exist in the repository.
+- If no matching label exists, omit the label flag.
+
+## Step 5 — Create PR
+
+Push the current branch and create the PR:
+
+```bash
+git push -u origin HEAD
+gh pr create --base develop \
+  --title "<title>" \
+  --body "<body>" \
+  --reviewer "<reviewer1>,<reviewer2>" \
+  --label "<label1>,<label2>"
+```
+
+- Omit `--reviewer` when there is no reviewer to request.
+- Omit `--label` when there is no label to apply.
+- Do not assign the PR author automatically.

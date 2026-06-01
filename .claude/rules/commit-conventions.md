@@ -31,10 +31,12 @@ init :: 프로젝트 초기 설정
 
 ## Branch Naming
 
-Format: `type/kebab-case-description`
+Format: `prefix/kebab-case-description`
+Allowed prefixes: `feat/`, `fix/`, `update/`, `add/`, `delete/`, `docs/`, `test/`, `init/`.
+Branch prefixes are independent from commit message types. Use `feat/` for feature work even when the commit type is `add`.
 
 ```
-add/add-jwt-auth
+feat/jwt-auth
 fix/user-query-bug
-refactor/optimize-post-query
+update/optimize-post-query
 ```
