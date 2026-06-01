@@ -4,9 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.argThat
 import org.mockito.BDDMockito.given
 import org.mockito.InjectMocks
 import org.mockito.Mock
@@ -17,6 +17,8 @@ import team.darkmoderap.aikon.domain.avatar.dto.UpdateDefaultStyleReqDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarDefaultStyle
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarDefaultStyleRepository
+import team.darkmoderap.aikon.global.common.error.AikonException
+import team.darkmoderap.aikon.global.common.error.ErrorCode
 import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
@@ -48,20 +50,22 @@ class UpdateDefaultStyleServiceImplTest {
         }
 
         @Test
-        @DisplayName("설정이 없으면 새로 생성한다")
-        fun `creates setting when not exists`() {
+        @DisplayName("설정이 없으면 서버 내부 오류를 던진다")
+        fun `throws internal server error when setting not found`() {
             // Given
             given(avatarDefaultStyleRepository.findById(AvatarDefaultStyle.SINGLETON_ID))
                 .willReturn(Optional.empty())
             val reqDto = UpdateDefaultStyleReqDto(Style.GHIBLI)
 
             // When
-            updateDefaultStyleService.execute(reqDto)
+            val exception =
+                assertThrows<AikonException> {
+                    updateDefaultStyleService.execute(reqDto)
+                }
 
             // Then
-            verify(avatarDefaultStyleRepository).save(
-                argThat<AvatarDefaultStyle> { it.defaultStyle == Style.GHIBLI },
-            )
+            assertEquals(ErrorCode.INTERNAL_SERVER_ERROR, exception.errorCode)
+            verify(avatarDefaultStyleRepository, never()).save(any())
         }
     }
 }
