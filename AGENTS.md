@@ -27,6 +27,15 @@ Each domain follows: `controller/`, `service/`, `repository/`, `entity/`, `dto/`
 - Format: `./gradlew ktlintFormat`
 - Run: `./gradlew bootRun`
 
+## Agent Skills
+
+- The official project skill directory is `.agents/skills`.
+- For commit requests, read and follow `.agents/skills/commit/SKILL.md` before running any commit command.
+- For PR creation requests, read and follow `.agents/skills/write-pr/SKILL.md`.
+- For PR review feedback requests, read and follow `.agents/skills/review-pr/SKILL.md`.
+- For test creation requests, read and follow `.agents/skills/test/SKILL.md`.
+- If a global skill under `~/.codex/skills` has the same name, prefer this project's `.agents/skills` version.
+
 ## Coding Conventions
 
 ### Kotlin Style
@@ -86,7 +95,9 @@ Format: `type :: 설명`
 ## Branch Strategy
 
 Git Flow — feature branches from `develop`, merge back to `develop`.
-Branch naming: `type/kebab-case-description`
+Branch naming: `prefix/kebab-case-description`
+Allowed branch prefixes: `feat/`, `fix/`, `update/`, `add/`, `delete/`, `docs/`, `test/`, `init/`.
+Use `feat/` for feature work even when the commit type is `add`.
 
 ## Notes
 

@@ -5,10 +5,18 @@ disable-model-invocation: true
 allowed-tools: Bash(bash *get-pr-data.sh:*), Bash(gh api:*), Bash(gh pr view:*), Bash(gh repo:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(git push:*), Bash(git rev-parse:*), Bash(rm:*), Edit, Read
 ---
 
+This is the official PR review skill for this project. When PR review feedback is requested, follow this skill before taking action.
+
 ## Step 1 — Collect PR Data
 
 ```bash
 bash "${CLAUDE_SKILL_DIR}/scripts/get-pr-data.sh"
+```
+
+If `CLAUDE_SKILL_DIR` is unavailable, run the repository-local script:
+
+```bash
+bash ".agents/skills/review-pr/scripts/get-pr-data.sh"
 ```
 
 Output files:
@@ -119,6 +127,8 @@ gh api "repos/<owner>/<repo>/pulls/<pr_number>/comments/<comment_id>/replies" \
 ```
 
 For reply body templates, read `${CLAUDE_SKILL_DIR}/references/reply-formats.md`.
+
+If `CLAUDE_SKILL_DIR` is unavailable, read `.agents/skills/review-pr/references/reply-formats.md`.
 
 ## Step 7 — Cleanup
 

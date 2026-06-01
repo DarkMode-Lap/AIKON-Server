@@ -4,6 +4,8 @@ description: Write a GitHub Pull Request title and body based on the commits and
 allowed-tools: Bash, Read
 ---
 
+This is the official PR writing skill for this project. When PR creation is requested, follow this skill before taking action.
+
 ## Step 1 — Collect Branch Info
 
 ```bash
