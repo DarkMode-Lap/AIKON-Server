@@ -13,6 +13,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.context.ApplicationEventPublisher
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
@@ -27,6 +28,9 @@ import java.util.Optional
 class DeleteAvatarServiceImplTest {
     @Mock
     private lateinit var avatarRepository: AvatarRepository
+
+    @Mock
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @InjectMocks
     private lateinit var deleteAvatarService: DeleteAvatarServiceImpl
@@ -46,6 +50,7 @@ class DeleteAvatarServiceImplTest {
 
             // Then
             verify(avatarRepository).delete(avatar)
+            verify(eventPublisher).publishEvent(anyEvent())
         }
 
         @Test
@@ -95,5 +100,10 @@ class DeleteAvatarServiceImplTest {
                 ageRange = AgeRange.AGE_20_PLUS,
                 generationStatus = status,
             )
+
+        private fun anyEvent(): Any {
+            any(Any::class.java)
+            return Any()
+        }
     }
 }

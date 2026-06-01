@@ -12,15 +12,26 @@ import org.mockito.Mockito.verify
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
+import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarResDto
+import team.darkmoderap.aikon.domain.avatar.dto.GetAvatarResDto
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateDefaultStyleReqDto
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
+import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
+import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.GetAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.SubscribeAvatarChangesService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateDefaultStyleService
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -28,6 +39,9 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 import team.darkmoderap.aikon.global.common.error.handler.GlobalExceptionHandler
 
 class AvatarControllerTest {
+    private val createAvatarService = mock(CreateAvatarService::class.java)
+    private val getAvatarService = mock(GetAvatarService::class.java)
+    private val subscribeAvatarChangesService = mock(SubscribeAvatarChangesService::class.java)
     private val updateAvatarService = mock(UpdateAvatarService::class.java)
     private val updateDefaultStyleService = mock(UpdateDefaultStyleService::class.java)
     private val deleteAvatarService = mock(DeleteAvatarService::class.java)
@@ -35,9 +49,139 @@ class AvatarControllerTest {
     private val mockMvc: MockMvc =
         MockMvcBuilders
             .standaloneSetup(
-                AvatarController(updateAvatarService, updateDefaultStyleService, deleteAvatarService),
+                AvatarController(
+                    createAvatarService,
+                    getAvatarService,
+                    subscribeAvatarChangesService,
+                    updateAvatarService,
+                    updateDefaultStyleService,
+                    deleteAvatarService,
+                ),
             ).setControllerAdvice(GlobalExceptionHandler())
             .build()
+
+    @Nested
+    @DisplayName("POST /avatars 는")
+    inner class CreateAvatar {
+        @Test
+        @DisplayName("유효한 요청이면 201을 반환하고 서비스를 호출한다")
+        fun `returns 201 when request is valid`() {
+            // Given
+            Mockito
+                .`when`(createAvatarService.execute(anyCreateReqDto()))
+                .thenReturn(CreateAvatarResDto(id = AVATAR_ID, generationStatus = GenerationStatus.WAITING))
+            val body = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI","ageRange":"AGE_20_PLUS"}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    post("/avatars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.id").value(AVATAR_ID))
+                .andExpect(jsonPath("$.generationStatus").value("WAITING"))
+
+            verify(createAvatarService).execute(anyCreateReqDto())
+        }
+
+        @Test
+        @DisplayName("필수 필드가 누락되면 400을 반환하고 서비스를 호출하지 않는다")
+        fun `returns 400 when required field is missing`() {
+            // Given
+            val body = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI"}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    post("/avatars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+
+            verify(createAvatarService, never()).execute(anyCreateReqDto())
+        }
+
+        @Test
+        @DisplayName("잘못된 enum 값이면 400을 반환하고 서비스를 호출하지 않는다")
+        fun `returns 400 when enum value is invalid`() {
+            // Given
+            val body = """{"nickname":"새아바타","gender":"UNKNOWN","style":"GHIBLI","ageRange":"AGE_20_PLUS"}"""
+
+            // When & Then
+            mockMvc
+                .perform(
+                    post("/avatars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+
+            verify(createAvatarService, never()).execute(anyCreateReqDto())
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /avatars/{avatarId} 는")
+    inner class GetAvatar {
+        @Test
+        @DisplayName("아바타가 존재하면 200과 응답 본문을 반환한다")
+        fun `returns 200 when avatar exists`() {
+            // Given
+            Mockito
+                .`when`(getAvatarService.execute(AVATAR_ID))
+                .thenReturn(
+                    GetAvatarResDto(
+                        id = AVATAR_ID,
+                        nickname = "새아바타",
+                        imageUrl = "https://example.com/avatar.png",
+                        passUrl = "Aikon500",
+                    ),
+                )
+
+            // When & Then
+            mockMvc
+                .perform(get("/avatars/{avatarId}", AVATAR_ID))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(AVATAR_ID))
+                .andExpect(jsonPath("$.nickname").value("새아바타"))
+                .andExpect(jsonPath("$.imageUrl").value("https://example.com/avatar.png"))
+                .andExpect(jsonPath("$.passUrl").value("Aikon500"))
+        }
+
+        @Test
+        @DisplayName("아바타가 없으면 404를 반환한다")
+        fun `returns 404 when avatar not found`() {
+            // Given
+            willThrow(AikonException(ErrorCode.AVATAR_NOT_FOUND))
+                .given(getAvatarService)
+                .execute(AVATAR_ID)
+
+            // When & Then
+            mockMvc
+                .perform(get("/avatars/{avatarId}", AVATAR_ID))
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /avatars/changes 는")
+    inner class SubscribeAvatarChanges {
+        @Test
+        @DisplayName("SSE 구독 요청이면 200을 반환하고 서비스를 호출한다")
+        fun `returns 200 when subscription starts`() {
+            // Given
+            Mockito
+                .`when`(subscribeAvatarChangesService.execute())
+                .thenReturn(SseEmitter())
+
+            // When & Then
+            mockMvc
+                .perform(get("/avatars/changes").accept(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(status().isOk)
+
+            verify(subscribeAvatarChangesService).execute()
+        }
+    }
 
     @Nested
     @DisplayName("PATCH /avatars/{avatarId} 는")
@@ -250,6 +394,16 @@ class AvatarControllerTest {
 
     companion object {
         private const val AVATAR_ID = 1L
+
+        private fun anyCreateReqDto(): CreateAvatarReqDto {
+            Mockito.any(CreateAvatarReqDto::class.java)
+            return CreateAvatarReqDto(
+                nickname = "dummy",
+                gender = Gender.MALE,
+                style = Style.STUDIO,
+                ageRange = AgeRange.AGE_0_7,
+            )
+        }
 
         private fun anyReqDto(): UpdateAvatarReqDto {
             Mockito.any(UpdateAvatarReqDto::class.java)
