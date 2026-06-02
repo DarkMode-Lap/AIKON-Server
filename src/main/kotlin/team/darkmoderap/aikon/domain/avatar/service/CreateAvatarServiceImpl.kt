@@ -17,8 +17,7 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 @Service
 class CreateAvatarServiceImpl(
     private val avatarRepository: AvatarRepository,
-    private val avatarImageGenerator: AvatarImageGenerator,
-    private val avatarImageStorage: AvatarImageStorage,
+    private val avatarImageGenerationTask: AvatarImageGenerationTask,
     private val eventPublisher: ApplicationEventPublisher,
 ) : CreateAvatarService {
     @Transactional
@@ -32,10 +31,10 @@ class CreateAvatarServiceImpl(
             try {
                 avatarRepository.saveAndFlush(
                     AvatarEntity(
-                        nickname = reqDto.nickname!!,
-                        gender = reqDto.gender!!,
-                        style = reqDto.style!!,
-                        ageRange = reqDto.ageRange!!,
+                        nickname = requireNotNull(reqDto.nickname),
+                        gender = requireNotNull(reqDto.gender),
+                        style = requireNotNull(reqDto.style),
+                        ageRange = requireNotNull(reqDto.ageRange),
                         generationStatus = GenerationStatus.PROCESSING,
                         passUrl = passCode,
                     ),
@@ -44,7 +43,12 @@ class CreateAvatarServiceImpl(
                 throw AikonException(ErrorCode.AVATAR_PASS_CODE_ASSIGNMENT_FAILED, cause = exception)
             }
 
-        generateImage(avatar, sourceImage)
+        avatarImageGenerationTask.generate(
+            avatarId = avatar.id,
+            style = avatar.style,
+            sourceBytes = sourceImage.bytes,
+            sourceMimeType = sourceImage.mimeType,
+        )
         eventPublisher.publishEvent(AvatarListChangedEvent())
 
         return CreateAvatarResDto(
@@ -74,26 +78,6 @@ class CreateAvatarServiceImpl(
             bytes = bytes,
             mimeType = mimeType,
         )
-    }
-
-    private fun generateImage(
-        avatar: AvatarEntity,
-        sourceImage: SourceImage,
-    ) {
-        try {
-            val generatedImage =
-                avatarImageGenerator.generate(
-                    AvatarImageGenerationCommand(
-                        style = avatar.style,
-                        sourceImage = sourceImage.bytes,
-                        sourceMimeType = sourceImage.mimeType,
-                    ),
-                )
-            val imageUrl = avatarImageStorage.upload(avatar.id, generatedImage)
-            avatar.completeGeneration(imageUrl)
-        } catch (exception: Exception) {
-            avatar.failGeneration()
-        }
     }
 
     private data class SourceImage(

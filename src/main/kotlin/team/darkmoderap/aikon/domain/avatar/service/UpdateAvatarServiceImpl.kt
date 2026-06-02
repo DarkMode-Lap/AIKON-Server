@@ -28,7 +28,7 @@ class UpdateAvatarServiceImpl(
             throw AikonException(ErrorCode.AVATAR_GENERATION_IN_PROGRESS)
         }
 
-        avatar.update(reqDto.nickname!!, reqDto.gender!!, reqDto.ageRange!!)
+        avatar.update(requireNotNull(reqDto.nickname), requireNotNull(reqDto.gender), requireNotNull(reqDto.ageRange))
         eventPublisher.publishEvent(AvatarListChangedEvent())
     }
 }
