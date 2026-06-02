@@ -24,17 +24,17 @@ class AvatarEntity(
     var gender: Gender,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var style: Style,
+    val style: Style,
     @Enumerated(EnumType.STRING)
     @Column(name = "age_range", nullable = false)
     var ageRange: AgeRange,
     @Enumerated(EnumType.STRING)
     @Column(name = "generation_status", nullable = false)
     var generationStatus: GenerationStatus = GenerationStatus.WAITING,
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 512)
     var imageUrl: String? = null,
-    @Column(name = "pass_url", unique = true)
-    var passUrl: String? = null,
+    @Column(name = "pass_url", unique = true, length = 20)
+    val passUrl: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
