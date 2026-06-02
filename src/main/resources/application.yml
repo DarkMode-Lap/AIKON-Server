@@ -8,3 +8,19 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${DDL_AUTO}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  image-model: ${GEMINI_IMAGE_MODEL:gemini-2.5-flash-image}
+
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${S3_BUCKET:}
+    public-base-url: ${S3_PUBLIC_BASE_URL:}
+    endpoint: ${S3_ENDPOINT:}
+    path-style-access-enabled: ${S3_PATH_STYLE_ACCESS_ENABLED:true}
