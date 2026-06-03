@@ -1,5 +1,6 @@
 package team.darkmoderap.aikon.domain.avatar.controller
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.validation.Validation
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -61,6 +62,7 @@ class AvatarControllerTest {
                     updateDefaultStyleService,
                     deleteAvatarService,
                     Validation.buildDefaultValidatorFactory().validator,
+                    jacksonObjectMapper(),
                 ),
             ).setControllerAdvice(GlobalExceptionHandler())
             .build()

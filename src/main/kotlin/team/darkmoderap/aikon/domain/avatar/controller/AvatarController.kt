@@ -2,7 +2,6 @@ package team.darkmoderap.aikon.domain.avatar.controller
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.servlet.http.Part
 import jakarta.validation.Valid
 import jakarta.validation.Validator
@@ -47,9 +46,8 @@ class AvatarController(
     private val updateDefaultStyleService: UpdateDefaultStyleService,
     private val deleteAvatarService: DeleteAvatarService,
     private val validator: Validator,
+    private val objectMapper: ObjectMapper,
 ) {
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
-
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     fun createAvatar(

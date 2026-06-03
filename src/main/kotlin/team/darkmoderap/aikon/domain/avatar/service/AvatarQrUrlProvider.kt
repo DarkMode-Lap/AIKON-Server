@@ -6,11 +6,11 @@ import org.springframework.stereotype.Component
 @Component
 class AvatarQrUrlProvider(
     @Value("\${aikon.frontend.public-base-url:}")
-    private val publicBaseUrl: String,
+    publicBaseUrl: String,
 ) {
-    fun create(passUrl: String): String? {
-        val baseUrl = publicBaseUrl.trim().trimEnd('/')
+    private val baseUrl = publicBaseUrl.trim().trimEnd('/')
 
+    fun create(passUrl: String): String? {
         if (baseUrl.isBlank()) {
             return null
         }

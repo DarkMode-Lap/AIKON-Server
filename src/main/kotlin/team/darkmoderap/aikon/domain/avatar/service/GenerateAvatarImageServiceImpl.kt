@@ -4,7 +4,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -16,30 +16,40 @@ class GenerateAvatarImageServiceImpl(
     private val avatarImageGenerator: AvatarImageGenerator,
     private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
+    private val transactionTemplate: TransactionTemplate,
 ) : GenerateAvatarImageService {
     @Async
-    @Transactional
     override fun execute(
         avatarId: Long,
         sourceImage: AvatarSourceImage,
     ) {
-        val avatar =
-            avatarRepository.findByIdOrNull(avatarId)
-                ?: throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
+        val style =
+            transactionTemplate.execute {
+                avatarRepository.findByIdOrNull(avatarId)?.style
+            } ?: throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
 
-        try {
-            val generatedImage =
-                avatarImageGenerator.generate(
-                    AvatarImageGenerationCommand(
-                        style = avatar.style,
-                        sourceImage = sourceImage.bytes,
-                        sourceMimeType = sourceImage.mimeType,
-                    ),
-                )
-            val imageUrl = avatarImageStorage.upload(avatar.id, generatedImage)
-            avatar.completeGeneration(imageUrl)
-        } catch (exception: Exception) {
-            avatar.failGeneration()
+        val result =
+            runCatching {
+                val generatedImage =
+                    avatarImageGenerator.generate(
+                        AvatarImageGenerationCommand(
+                            style = style,
+                            sourceImage = sourceImage.bytes,
+                            sourceMimeType = sourceImage.mimeType,
+                        ),
+                    )
+                avatarImageStorage.upload(avatarId, generatedImage)
+            }
+
+        transactionTemplate.executeWithoutResult {
+            val avatar =
+                avatarRepository.findByIdOrNull(avatarId)
+                    ?: throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
+
+            result.fold(
+                onSuccess = { imageUrl -> avatar.completeGeneration(imageUrl) },
+                onFailure = { avatar.failGeneration() },
+            )
         }
 
         eventPublisher.publishEvent(AvatarListChangedEvent())
