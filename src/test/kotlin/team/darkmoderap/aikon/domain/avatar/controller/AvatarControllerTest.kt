@@ -33,6 +33,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.DeleteAllAvatarsService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.GetAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.SubscribeAvatarChangesService
@@ -49,6 +50,7 @@ class AvatarControllerTest {
     private val updateAvatarService = mock(UpdateAvatarService::class.java)
     private val updateDefaultStyleService = mock(UpdateDefaultStyleService::class.java)
     private val deleteAvatarService = mock(DeleteAvatarService::class.java)
+    private val deleteAllAvatarsService = mock(DeleteAllAvatarsService::class.java)
 
     private val mockMvc: MockMvc =
         MockMvcBuilders
@@ -60,6 +62,7 @@ class AvatarControllerTest {
                     updateAvatarService,
                     updateDefaultStyleService,
                     deleteAvatarService,
+                    deleteAllAvatarsService,
                     Validation.buildDefaultValidatorFactory().validator,
                     jacksonObjectMapper(),
                 ),
@@ -389,6 +392,21 @@ class AvatarControllerTest {
                 ).andExpect(status().isBadRequest)
 
             verify(updateDefaultStyleService, never()).execute(anyDefaultStyleReqDto())
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /avatars 는")
+    inner class DeleteAllAvatars {
+        @Test
+        @DisplayName("유효한 요청이면 204를 반환하고 서비스를 호출한다")
+        fun `returns 204 and calls service`() {
+            // When & Then
+            mockMvc
+                .perform(delete("/avatars"))
+                .andExpect(status().isNoContent)
+
+            verify(deleteAllAvatarsService).execute()
         }
     }
 
