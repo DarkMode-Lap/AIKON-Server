@@ -3,6 +3,8 @@ package team.darkmoderap.aikon.domain.avatar.service
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -16,20 +18,23 @@ class DeleteAllAvatarsServiceImpl(
 ) : DeleteAllAvatarsService {
     @Transactional
     override fun execute() {
-        val avatars = avatarRepository.findAllByOrderByIdAsc()
+        val imageUrls = avatarRepository.findAllByOrderByIdAsc().mapNotNull { it.imageUrl }
 
-        avatars.forEach { avatar -> deleteImageIfExists(avatar.imageUrl) }
         avatarRepository.deleteAllInBatch()
-        eventPublisher.publishEvent(AvatarListChangedEvent())
-    }
 
-    private fun deleteImageIfExists(imageUrl: String?) {
-        if (imageUrl == null) return
-
-        try {
-            avatarImageStorage.delete(imageUrl)
-        } catch (exception: Exception) {
-            throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, cause = exception)
-        }
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() {
+                    imageUrls.forEach { imageUrl ->
+                        try {
+                            avatarImageStorage.delete(imageUrl)
+                        } catch (exception: Exception) {
+                            throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, cause = exception)
+                        }
+                    }
+                    eventPublisher.publishEvent(AvatarListChangedEvent())
+                }
+            },
+        )
     }
 }

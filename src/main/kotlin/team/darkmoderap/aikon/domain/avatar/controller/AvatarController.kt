@@ -179,6 +179,7 @@ class AvatarController(
         deleteAvatarService.execute(avatarId)
     }
 
+    // TODO: 어드민 권한 체크 추가 (인증 인프라 도입 후)
     @Operation(summary = "아바타 전체 삭제")
     @ApiResponse(responseCode = "204", description = "전체 삭제 성공")
     @DeleteMapping
