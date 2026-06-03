@@ -1,8 +1,16 @@
 package team.darkmoderap.aikon.domain.avatar.controller
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import jakarta.servlet.http.Part
 import jakarta.validation.Valid
+import jakarta.validation.Validator
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.validation.BeanPropertyBindingResult
+import org.springframework.validation.BindException
+import org.springframework.validation.FieldError
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -26,6 +34,8 @@ import team.darkmoderap.aikon.domain.avatar.service.GetAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.SubscribeAvatarChangesService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateDefaultStyleService
+import team.darkmoderap.aikon.global.common.error.AikonException
+import team.darkmoderap.aikon.global.common.error.ErrorCode
 
 @RestController
 @RequestMapping("/avatars")
@@ -36,13 +46,16 @@ class AvatarController(
     private val updateAvatarService: UpdateAvatarService,
     private val updateDefaultStyleService: UpdateDefaultStyleService,
     private val deleteAvatarService: DeleteAvatarService,
+    private val validator: Validator,
 ) {
+    private val objectMapper: ObjectMapper = jacksonObjectMapper()
+
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     fun createAvatar(
-        @Valid @RequestPart reqDto: CreateAvatarReqDto,
+        @RequestPart("reqDto") reqDtoPart: Part,
         @RequestPart image: MultipartFile,
-    ): CreateAvatarResDto = createAvatarService.execute(reqDto, image)
+    ): CreateAvatarResDto = createAvatarService.execute(parseCreateAvatarReqDto(reqDtoPart), image)
 
     @GetMapping("/{avatarId}")
     fun getAvatar(
@@ -76,5 +89,47 @@ class AvatarController(
         @PathVariable avatarId: Long,
     ) {
         deleteAvatarService.execute(avatarId)
+    }
+
+    private fun parseCreateAvatarReqDto(reqDtoPart: Part): CreateAvatarReqDto {
+        val rawReqDto =
+            reqDtoPart.inputStream
+                .bufferedReader(Charsets.UTF_8)
+                .use { reader -> reader.readText() }
+        val reqDto =
+            try {
+                objectMapper.readValue(rawReqDto, CreateAvatarReqDto::class.java)
+            } catch (exception: JsonProcessingException) {
+                throw AikonException(ErrorCode.INVALID_INPUT_VALUE, cause = exception)
+            }
+
+        validateCreateAvatarReqDto(reqDto)
+
+        return reqDto
+    }
+
+    private fun validateCreateAvatarReqDto(reqDto: CreateAvatarReqDto) {
+        val violations = validator.validate(reqDto)
+
+        if (violations.isEmpty()) {
+            return
+        }
+
+        val bindingResult = BeanPropertyBindingResult(reqDto, "reqDto")
+        violations.forEach { violation ->
+            bindingResult.addError(
+                FieldError(
+                    "reqDto",
+                    violation.propertyPath.toString(),
+                    violation.invalidValue,
+                    false,
+                    null,
+                    null,
+                    violation.message,
+                ),
+            )
+        }
+
+        throw BindException(bindingResult)
     }
 }
