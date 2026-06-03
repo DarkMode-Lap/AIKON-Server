@@ -13,7 +13,6 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.mock.web.MockPart
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -82,7 +81,7 @@ class AvatarControllerTest {
             mockMvc
                 .perform(
                     multipart("/avatars")
-                        .part(reqDtoPart())
+                        .file(reqDtoPart())
                         .file(imagePart()),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").value(AVATAR_ID))
@@ -103,7 +102,7 @@ class AvatarControllerTest {
             mockMvc
                 .perform(
                     multipart("/avatars")
-                        .part(reqDtoPart(contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE))
+                        .file(reqDtoPart(contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE))
                         .file(imagePart()),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").value(AVATAR_ID))
@@ -122,7 +121,7 @@ class AvatarControllerTest {
             mockMvc
                 .perform(
                     multipart("/avatars")
-                        .part(reqDtoPart(reqDto)),
+                        .file(reqDtoPart(reqDto)),
                 ).andExpect(status().isBadRequest)
 
             verify(createAvatarService, never()).execute(anyCreateReqDto(), anyImage())
@@ -138,7 +137,7 @@ class AvatarControllerTest {
             mockMvc
                 .perform(
                     multipart("/avatars")
-                        .part(reqDtoPart(reqDto))
+                        .file(reqDtoPart(reqDto))
                         .file(imagePart()),
                 ).andExpect(status().isBadRequest)
 
@@ -443,13 +442,13 @@ class AvatarControllerTest {
         private fun reqDtoPart(
             content: String = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI","ageRange":"AGE_20_PLUS"}""",
             contentType: String = MediaType.APPLICATION_JSON_VALUE,
-        ): MockPart =
-            MockPart(
+        ): MockMultipartFile =
+            MockMultipartFile(
                 "reqDto",
+                "",
+                contentType,
                 content.toByteArray(),
-            ).apply {
-                headers.contentType = MediaType.parseMediaType(contentType)
-            }
+            )
 
         private fun imagePart(): MockMultipartFile =
             MockMultipartFile(

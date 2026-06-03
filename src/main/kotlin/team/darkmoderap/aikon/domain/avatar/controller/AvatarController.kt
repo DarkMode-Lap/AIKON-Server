@@ -2,7 +2,6 @@ package team.darkmoderap.aikon.domain.avatar.controller
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.servlet.http.Part
 import jakarta.validation.Valid
 import jakarta.validation.Validator
 import org.springframework.http.HttpStatus
@@ -51,7 +50,7 @@ class AvatarController(
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     fun createAvatar(
-        @RequestPart("reqDto") reqDtoPart: Part,
+        @RequestPart("reqDto") reqDtoPart: MultipartFile,
         @RequestPart image: MultipartFile,
     ): CreateAvatarResDto = createAvatarService.execute(parseCreateAvatarReqDto(reqDtoPart), image)
 
@@ -89,7 +88,7 @@ class AvatarController(
         deleteAvatarService.execute(avatarId)
     }
 
-    private fun parseCreateAvatarReqDto(reqDtoPart: Part): CreateAvatarReqDto {
+    private fun parseCreateAvatarReqDto(reqDtoPart: MultipartFile): CreateAvatarReqDto {
         val rawReqDto =
             reqDtoPart.inputStream
                 .bufferedReader(Charsets.UTF_8)

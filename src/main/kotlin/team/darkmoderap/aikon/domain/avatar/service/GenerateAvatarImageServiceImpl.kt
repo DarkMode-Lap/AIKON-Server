@@ -1,5 +1,6 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
@@ -18,6 +19,8 @@ class GenerateAvatarImageServiceImpl(
     private val eventPublisher: ApplicationEventPublisher,
     private val transactionTemplate: TransactionTemplate,
 ) : GenerateAvatarImageService {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @Async
     override fun execute(
         avatarId: Long,
@@ -48,7 +51,10 @@ class GenerateAvatarImageServiceImpl(
 
             result.fold(
                 onSuccess = { imageUrl -> avatar.completeGeneration(imageUrl) },
-                onFailure = { avatar.failGeneration() },
+                onFailure = { exception ->
+                    logger.error("Failed to generate avatar image for avatar {}", avatarId, exception)
+                    avatar.failGeneration()
+                },
             )
         }
 
