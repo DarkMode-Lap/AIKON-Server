@@ -9,6 +9,7 @@ import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarResDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
+import team.darkmoderap.aikon.domain.avatar.event.AvatarCreatedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -17,8 +18,6 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 @Service
 class CreateAvatarServiceImpl(
     private val avatarRepository: AvatarRepository,
-    private val avatarImageGenerator: AvatarImageGenerator,
-    private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
 ) : CreateAvatarService {
     @Transactional
@@ -44,7 +43,7 @@ class CreateAvatarServiceImpl(
                 throw AikonException(ErrorCode.AVATAR_PASS_CODE_ASSIGNMENT_FAILED, cause = exception)
             }
 
-        generateImage(avatar, sourceImage)
+        eventPublisher.publishEvent(AvatarCreatedEvent(avatar.id, sourceImage))
         eventPublisher.publishEvent(AvatarListChangedEvent())
 
         return CreateAvatarResDto(
@@ -60,7 +59,7 @@ class CreateAvatarServiceImpl(
             ?: throw AikonException(ErrorCode.AVATAR_PASS_CODE_EXHAUSTED)
     }
 
-    private fun MultipartFile.toSourceImage(): SourceImage {
+    private fun MultipartFile.toSourceImage(): AvatarSourceImage {
         if (isEmpty) {
             throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
         }
@@ -70,36 +69,11 @@ class CreateAvatarServiceImpl(
                 ?.takeIf { it.startsWith("image/") }
                 ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
 
-        return SourceImage(
+        return AvatarSourceImage(
             bytes = bytes,
             mimeType = mimeType,
         )
     }
-
-    private fun generateImage(
-        avatar: AvatarEntity,
-        sourceImage: SourceImage,
-    ) {
-        try {
-            val generatedImage =
-                avatarImageGenerator.generate(
-                    AvatarImageGenerationCommand(
-                        style = avatar.style,
-                        sourceImage = sourceImage.bytes,
-                        sourceMimeType = sourceImage.mimeType,
-                    ),
-                )
-            val imageUrl = avatarImageStorage.upload(avatar.id, generatedImage)
-            avatar.completeGeneration(imageUrl)
-        } catch (exception: Exception) {
-            avatar.failGeneration()
-        }
-    }
-
-    private data class SourceImage(
-        val bytes: ByteArray,
-        val mimeType: String,
-    )
 
     companion object {
         private const val PASS_CODE_PREFIX = "Aikon"

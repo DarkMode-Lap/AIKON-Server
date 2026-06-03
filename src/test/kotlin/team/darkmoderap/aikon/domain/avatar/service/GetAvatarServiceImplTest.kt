@@ -25,6 +25,9 @@ class GetAvatarServiceImplTest {
     @Mock
     private lateinit var avatarRepository: AvatarRepository
 
+    @Mock
+    private lateinit var avatarQrUrlProvider: AvatarQrUrlProvider
+
     @InjectMocks
     private lateinit var getAvatarService: GetAvatarServiceImpl
 
@@ -32,10 +35,11 @@ class GetAvatarServiceImplTest {
     @DisplayName("execute 메서드는")
     inner class Execute {
         @Test
-        @DisplayName("아바타가 존재하면 조회 응답을 반환한다")
-        fun `returns avatar when found`() {
+        @DisplayName("생성이 완료된 아바타가 존재하면 결과 URL을 포함한 조회 응답을 반환한다")
+        fun `returns completed avatar with result urls when found`() {
             // Given
             given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar()))
+            given(avatarQrUrlProvider.create("Aikon500")).willReturn(QR_URL)
 
             // When
             val result = getAvatarService.execute(AVATAR_ID)
@@ -43,8 +47,28 @@ class GetAvatarServiceImplTest {
             // Then
             assertEquals(AVATAR_ID, result.id)
             assertEquals("새아바타", result.nickname)
+            assertEquals(GenerationStatus.COMPLETED, result.generationStatus)
             assertEquals("https://example.com/avatar.png", result.imageUrl)
             assertEquals("Aikon500", result.passUrl)
+            assertEquals(QR_URL, result.qrUrl)
+        }
+
+        @Test
+        @DisplayName("생성 중인 아바타는 결과 URL을 제외한 조회 응답을 반환한다")
+        fun `returns generating avatar without result urls when found`() {
+            // Given
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar(GenerationStatus.PROCESSING)))
+
+            // When
+            val result = getAvatarService.execute(AVATAR_ID)
+
+            // Then
+            assertEquals(AVATAR_ID, result.id)
+            assertEquals("새아바타", result.nickname)
+            assertEquals(GenerationStatus.PROCESSING, result.generationStatus)
+            assertEquals(null, result.imageUrl)
+            assertEquals(null, result.passUrl)
+            assertEquals(null, result.qrUrl)
         }
 
         @Test
@@ -66,14 +90,15 @@ class GetAvatarServiceImplTest {
 
     companion object {
         private const val AVATAR_ID = 1L
+        private const val QR_URL = "https://aikon.example.com/pass/Aikon500"
 
-        private fun avatar(): AvatarEntity =
+        private fun avatar(generationStatus: GenerationStatus = GenerationStatus.COMPLETED): AvatarEntity =
             AvatarEntity(
                 nickname = "새아바타",
                 gender = Gender.FEMALE,
                 style = Style.GHIBLI,
                 ageRange = AgeRange.AGE_20_PLUS,
-                generationStatus = GenerationStatus.COMPLETED,
+                generationStatus = generationStatus,
                 imageUrl = "https://example.com/avatar.png",
                 passUrl = "Aikon500",
                 id = AVATAR_ID,
