@@ -50,9 +50,9 @@ class AvatarController(
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)
     fun createAvatar(
-        @RequestPart("reqDto") reqDtoPart: MultipartFile,
+        @RequestPart("reqDto") rawReqDto: String,
         @RequestPart image: MultipartFile,
-    ): CreateAvatarResDto = createAvatarService.execute(parseCreateAvatarReqDto(reqDtoPart), image)
+    ): CreateAvatarResDto = createAvatarService.execute(parseCreateAvatarReqDto(rawReqDto), image)
 
     @GetMapping("/{avatarId}")
     fun getAvatar(
@@ -88,11 +88,7 @@ class AvatarController(
         deleteAvatarService.execute(avatarId)
     }
 
-    private fun parseCreateAvatarReqDto(reqDtoPart: MultipartFile): CreateAvatarReqDto {
-        val rawReqDto =
-            reqDtoPart.inputStream
-                .bufferedReader(Charsets.UTF_8)
-                .use { reader -> reader.readText() }
+    private fun parseCreateAvatarReqDto(rawReqDto: String): CreateAvatarReqDto {
         val reqDto =
             try {
                 objectMapper.readValue(rawReqDto, CreateAvatarReqDto::class.java)

@@ -23,6 +23,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
+import team.darkmoderap.aikon.domain.avatar.event.AvatarCreatedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -32,9 +33,6 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 class CreateAvatarServiceImplTest {
     @Mock
     private lateinit var avatarRepository: AvatarRepository
-
-    @Mock
-    private lateinit var generateAvatarImageService: GenerateAvatarImageService
 
     @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
@@ -62,8 +60,8 @@ class CreateAvatarServiceImplTest {
             assertEquals("Aikon500", avatarCaptor.value.passUrl)
             assertEquals(GenerationStatus.PROCESSING, avatarCaptor.value.generationStatus)
             assertEquals(GenerationStatus.PROCESSING, result.generationStatus)
-            verify(generateAvatarImageService).execute(anyLong(), anySourceImage())
-            verify(eventPublisher).publishEvent(anyEvent())
+            verify(eventPublisher).publishEvent(anyAvatarCreatedEvent())
+            verify(eventPublisher).publishEvent(anyAvatarListChangedEvent())
         }
 
         @Test
@@ -135,8 +133,8 @@ class CreateAvatarServiceImplTest {
             // Then
             assertEquals(AVATAR_ID, result.id)
             assertEquals(GenerationStatus.PROCESSING, result.generationStatus)
-            verify(generateAvatarImageService).execute(anyLong(), anySourceImage())
-            verify(eventPublisher).publishEvent(anyEvent())
+            verify(eventPublisher).publishEvent(anyAvatarCreatedEvent())
+            verify(eventPublisher).publishEvent(anyAvatarListChangedEvent())
         }
 
         @Test
@@ -204,16 +202,6 @@ class CreateAvatarServiceImplTest {
             return avatar("Aikon500")
         }
 
-        private fun anyLong(): Long {
-            org.mockito.ArgumentMatchers.anyLong()
-            return 0L
-        }
-
-        private fun anySourceImage(): AvatarSourceImage {
-            any(AvatarSourceImage::class.java)
-            return AvatarSourceImage(byteArrayOf(1, 2, 3), "image/png")
-        }
-
         private fun image(): MultipartFile =
             MockMultipartFile(
                 "image",
@@ -222,9 +210,14 @@ class CreateAvatarServiceImplTest {
                 byteArrayOf(1, 2, 3),
             )
 
-        private fun anyEvent(): Any {
-            any(Any::class.java)
-            return Any()
+        private fun anyAvatarCreatedEvent(): Any {
+            any(AvatarCreatedEvent::class.java)
+            return AvatarCreatedEvent(AVATAR_ID, AvatarSourceImage(byteArrayOf(1, 2, 3), "image/png"))
+        }
+
+        private fun anyAvatarListChangedEvent(): Any {
+            any(AvatarListChangedEvent::class.java)
+            return AvatarListChangedEvent()
         }
     }
 }

@@ -4,13 +4,12 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.support.TransactionSynchronization
-import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarResDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
+import team.darkmoderap.aikon.domain.avatar.event.AvatarCreatedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -19,7 +18,6 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 @Service
 class CreateAvatarServiceImpl(
     private val avatarRepository: AvatarRepository,
-    private val generateAvatarImageService: GenerateAvatarImageService,
     private val eventPublisher: ApplicationEventPublisher,
 ) : CreateAvatarService {
     @Transactional
@@ -45,7 +43,7 @@ class CreateAvatarServiceImpl(
                 throw AikonException(ErrorCode.AVATAR_PASS_CODE_ASSIGNMENT_FAILED, cause = exception)
             }
 
-        scheduleImageGeneration(avatar.id, sourceImage)
+        eventPublisher.publishEvent(AvatarCreatedEvent(avatar.id, sourceImage))
         eventPublisher.publishEvent(AvatarListChangedEvent())
 
         return CreateAvatarResDto(
@@ -74,24 +72,6 @@ class CreateAvatarServiceImpl(
         return AvatarSourceImage(
             bytes = bytes,
             mimeType = mimeType,
-        )
-    }
-
-    private fun scheduleImageGeneration(
-        avatarId: Long,
-        sourceImage: AvatarSourceImage,
-    ) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            generateAvatarImageService.execute(avatarId, sourceImage)
-            return
-        }
-
-        TransactionSynchronizationManager.registerSynchronization(
-            object : TransactionSynchronization {
-                override fun afterCommit() {
-                    generateAvatarImageService.execute(avatarId, sourceImage)
-                }
-            },
         )
     }
 
