@@ -71,11 +71,14 @@ class SubscribeAvatarChangesServiceImpl(
 
     private fun AvatarEntity.toChangeResDto(): AvatarChangeResDto =
         AvatarChangeResDto(
+            id = id,
             nickname = nickname,
             style = style,
             gender = gender,
             ageRange = ageRange,
             generationStatus = generationStatus,
+            imageUrl = imageUrl,
+            createdAt = createdAt,
         )
 
     companion object {
