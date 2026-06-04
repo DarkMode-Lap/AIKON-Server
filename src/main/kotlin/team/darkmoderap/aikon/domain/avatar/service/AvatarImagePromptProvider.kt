@@ -102,20 +102,16 @@ class AvatarImagePromptProvider {
         subject: String,
         gender: Gender,
         ageRange: AgeRange,
-    ): String {
-        val costumeDesc = buildHanbokCostume(gender, ageRange)
-        val hairDesc = buildHanbokHair(gender, ageRange)
-
-        return """
-            첨부된 사진 속 $subject 아름다운 한국 전통 한복을 입혀서 새롭게 그려줘.
-            $costumeDesc
-            $hairDesc
-            배경은 조선시대 궁궐 정원으로, 만개한 벚꽃나무, 석등, 기와 처마, 연못을 배치해줘.
-            조명은 따뜻한 황금빛 노을로 설정하고,
-            전체적으로 고풍스럽고 우아한 한국 전통 회화 일러스트 스타일로 표현해줘.
-            인물의 얼굴형과 생김새, 눈코입의 특징은 원본과 최대한 동일하게 유지해줘.
-            """.trimIndent()
-    }
+    ): String =
+        """
+        첨부된 사진 속 $subject 아름다운 한국 전통 한복을 입혀서 새롭게 그려줘.
+        ${buildHanbokCostume(gender, ageRange)}
+        ${buildHanbokHair(gender, ageRange)}
+        배경은 조선시대 궁궐 정원으로, 만개한 벚꽃나무, 석등, 기와 처마, 연못을 배치해줘.
+        조명은 따뜻한 황금빛 노을로 설정하고,
+        전체적으로 고풍스럽고 우아한 한국 전통 회화 일러스트 스타일로 표현해줘.
+        인물의 얼굴형과 생김새, 눈코입의 특징은 원본과 최대한 동일하게 유지해줘.
+        """.trimIndent()
 
     private fun buildHanbokCostume(
         gender: Gender,
@@ -151,7 +147,7 @@ class AvatarImagePromptProvider {
             }
 
             else -> {
-                "여성 전통 한복으로, 繊細한 꽃 자수가 있는 저고리와 풍성하게 흘러내리는 아이보리 또는 옥색 실크 치마를 입혀줘."
+                "여성 전통 한복으로, 섬세한 꽃 자수가 있는 저고리와 풍성하게 흘러내리는 아이보리 또는 옥색 실크 치마를 입혀줘."
             }
         }
 
