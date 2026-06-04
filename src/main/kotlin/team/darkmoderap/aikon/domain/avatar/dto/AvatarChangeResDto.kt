@@ -23,6 +23,8 @@ data class AvatarChangeResDto(
     val generationStatus: GenerationStatus,
     @Schema(description = "아바타 이미지 URL. 생성 완료 전에는 null", nullable = true)
     val imageUrl: String?,
+    @Schema(description = "패스 URL. 미발급 시 null", nullable = true)
+    val passUrl: String?,
     @Schema(description = "생성 일시")
     val createdAt: Instant,
 )

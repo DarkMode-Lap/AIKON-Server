@@ -78,6 +78,7 @@ class SubscribeAvatarChangesServiceImpl(
             ageRange = ageRange,
             generationStatus = generationStatus,
             imageUrl = imageUrl,
+            passUrl = passUrl,
             createdAt = createdAt,
         )
 
