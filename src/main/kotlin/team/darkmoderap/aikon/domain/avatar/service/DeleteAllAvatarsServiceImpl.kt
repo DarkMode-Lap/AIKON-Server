@@ -1,5 +1,6 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -7,8 +8,6 @@ import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
-import team.darkmoderap.aikon.global.common.error.AikonException
-import team.darkmoderap.aikon.global.common.error.ErrorCode
 
 @Service
 class DeleteAllAvatarsServiceImpl(
@@ -16,6 +15,8 @@ class DeleteAllAvatarsServiceImpl(
     private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
 ) : DeleteAllAvatarsService {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     override fun execute() {
         val imageUrls = avatarRepository.findAllByOrderByIdAsc().mapNotNull { it.imageUrl }
@@ -29,7 +30,7 @@ class DeleteAllAvatarsServiceImpl(
                         try {
                             avatarImageStorage.delete(imageUrl)
                         } catch (exception: Exception) {
-                            throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, cause = exception)
+                            logger.warn("Failed to delete avatar image {}", imageUrl, exception)
                         }
                     }
                     eventPublisher.publishEvent(AvatarListChangedEvent())
