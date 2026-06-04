@@ -138,6 +138,8 @@ class GenerateAvatarImageServiceImplTest {
             any(AvatarImageGenerationCommand::class.java)
             return AvatarImageGenerationCommand(
                 style = Style.GHIBLI,
+                gender = Gender.FEMALE,
+                ageRange = AgeRange.AGE_20_PLUS,
                 sourceImage = byteArrayOf(1, 2, 3),
                 sourceMimeType = "image/png",
             )
