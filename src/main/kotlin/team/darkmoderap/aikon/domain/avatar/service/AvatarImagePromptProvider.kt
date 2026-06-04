@@ -43,7 +43,13 @@ class AvatarImagePromptProvider {
                 AgeRange.AGE_14_19 -> "14~19세 $genderWord 청소년"
                 AgeRange.AGE_20_PLUS -> "$genderWord"
             }
-        val particle = if ((label.last().code - 0xAC00) % 28 != 0) "을" else "를"
+        val lastChar = label.last()
+        val particle =
+            if (lastChar.code in 0xAC00..0xD7A3) {
+                if ((lastChar.code - 0xAC00) % 28 != 0) "을" else "를"
+            } else {
+                "를"
+            }
         return label + particle
     }
 
@@ -156,8 +162,12 @@ class AvatarImagePromptProvider {
         ageRange: AgeRange,
     ): String =
         when {
+            gender == Gender.MALE && ageRange == AgeRange.AGE_20_PLUS -> {
+                "머리는 전통 상투 또는 단정한 묶음 스타일로 자연스럽게 표현해줘."
+            }
+
             gender == Gender.MALE -> {
-                "머리는 전통 상투 또는 묶음 스타일로 자연스럽게 표현해줘."
+                "머리는 단정하고 자연스럽게 정돈된 스타일로 표현해줘."
             }
 
             ageRange == AgeRange.AGE_0_7 || ageRange == AgeRange.AGE_8_13 -> {
