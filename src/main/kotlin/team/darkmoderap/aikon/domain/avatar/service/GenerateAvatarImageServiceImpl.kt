@@ -26,9 +26,9 @@ class GenerateAvatarImageServiceImpl(
         avatarId: Long,
         sourceImage: AvatarSourceImage,
     ) {
-        val style =
+        val avatar =
             transactionTemplate.execute {
-                avatarRepository.findByIdOrNull(avatarId)?.style
+                avatarRepository.findByIdOrNull(avatarId)
             } ?: throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
 
         val result =
@@ -36,7 +36,9 @@ class GenerateAvatarImageServiceImpl(
                 val generatedImage =
                     avatarImageGenerator.generate(
                         AvatarImageGenerationCommand(
-                            style = style,
+                            style = avatar.style,
+                            gender = avatar.gender,
+                            ageRange = avatar.ageRange,
                             sourceImage = sourceImage.bytes,
                             sourceMimeType = sourceImage.mimeType,
                         ),

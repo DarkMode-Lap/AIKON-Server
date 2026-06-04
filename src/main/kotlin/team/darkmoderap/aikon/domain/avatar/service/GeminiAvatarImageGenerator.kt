@@ -56,7 +56,7 @@ class GeminiAvatarImageGenerator(
                     GeminiContent(
                         parts =
                             listOf(
-                                GeminiPart(text = promptProvider.getPrompt(command.style)),
+                                GeminiPart(text = promptProvider.getPrompt(command.style, command.gender, command.ageRange)),
                                 GeminiPart(
                                     inlineData =
                                         GeminiInlineData(
