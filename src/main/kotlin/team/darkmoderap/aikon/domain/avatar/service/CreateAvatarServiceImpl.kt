@@ -31,10 +31,10 @@ class CreateAvatarServiceImpl(
             try {
                 avatarRepository.saveAndFlush(
                     AvatarEntity(
-                        nickname = reqDto.nickname!!,
-                        gender = reqDto.gender!!,
-                        style = reqDto.style!!,
-                        ageRange = reqDto.ageRange!!,
+                        nickname = reqDto.nickname ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
+                        gender = reqDto.gender ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
+                        style = reqDto.style ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
+                        ageRange = reqDto.ageRange ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
                         generationStatus = GenerationStatus.PROCESSING,
                         passUrl = passCode,
                     ),

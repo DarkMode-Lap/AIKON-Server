@@ -28,7 +28,11 @@ class UpdateAvatarServiceImpl(
             throw AikonException(ErrorCode.AVATAR_GENERATION_IN_PROGRESS)
         }
 
-        avatar.update(reqDto.nickname!!, reqDto.gender!!, reqDto.ageRange!!)
+        val nickname = reqDto.nickname ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
+        val gender = reqDto.gender ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
+        val ageRange = reqDto.ageRange ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
+
+        avatar.update(nickname, gender, ageRange)
         eventPublisher.publishEvent(AvatarListChangedEvent())
     }
 }
