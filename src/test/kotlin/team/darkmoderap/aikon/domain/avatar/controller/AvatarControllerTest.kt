@@ -1,5 +1,7 @@
 package team.darkmoderap.aikon.domain.avatar.controller
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import jakarta.validation.Validation
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -31,6 +33,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.DeleteAllAvatarsService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.GetAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.SubscribeAvatarChangesService
@@ -47,6 +50,7 @@ class AvatarControllerTest {
     private val updateAvatarService = mock(UpdateAvatarService::class.java)
     private val updateDefaultStyleService = mock(UpdateDefaultStyleService::class.java)
     private val deleteAvatarService = mock(DeleteAvatarService::class.java)
+    private val deleteAllAvatarsService = mock(DeleteAllAvatarsService::class.java)
 
     private val mockMvc: MockMvc =
         MockMvcBuilders
@@ -58,6 +62,9 @@ class AvatarControllerTest {
                     updateAvatarService,
                     updateDefaultStyleService,
                     deleteAvatarService,
+                    deleteAllAvatarsService,
+                    Validation.buildDefaultValidatorFactory().validator,
+                    jacksonObjectMapper(),
                 ),
             ).setControllerAdvice(GlobalExceptionHandler())
             .build()
@@ -71,7 +78,7 @@ class AvatarControllerTest {
             // Given
             Mockito
                 .`when`(createAvatarService.execute(anyCreateReqDto(), anyImage()))
-                .thenReturn(CreateAvatarResDto(id = AVATAR_ID, generationStatus = GenerationStatus.COMPLETED))
+                .thenReturn(CreateAvatarResDto(id = AVATAR_ID, generationStatus = GenerationStatus.PROCESSING))
 
             // When & Then
             mockMvc
@@ -81,7 +88,28 @@ class AvatarControllerTest {
                         .file(imagePart()),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").value(AVATAR_ID))
-                .andExpect(jsonPath("$.generationStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.generationStatus").value("PROCESSING"))
+
+            verify(createAvatarService).execute(anyCreateReqDto(), anyImage())
+        }
+
+        @Test
+        @DisplayName("reqDto 파트가 octet-stream이어도 201을 반환하고 서비스를 호출한다")
+        fun `returns 201 when reqDto part content type is octet stream`() {
+            // Given
+            Mockito
+                .`when`(createAvatarService.execute(anyCreateReqDto(), anyImage()))
+                .thenReturn(CreateAvatarResDto(id = AVATAR_ID, generationStatus = GenerationStatus.PROCESSING))
+
+            // When & Then
+            mockMvc
+                .perform(
+                    multipart("/avatars")
+                        .file(reqDtoPart(contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE))
+                        .file(imagePart()),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.id").value(AVATAR_ID))
+                .andExpect(jsonPath("$.generationStatus").value("PROCESSING"))
 
             verify(createAvatarService).execute(anyCreateReqDto(), anyImage())
         }
@@ -133,8 +161,10 @@ class AvatarControllerTest {
                     GetAvatarResDto(
                         id = AVATAR_ID,
                         nickname = "새아바타",
+                        generationStatus = GenerationStatus.COMPLETED,
                         imageUrl = "https://example.com/avatar.png",
                         passUrl = "Aikon500",
+                        qrUrl = "https://aikon.example.com/pass/Aikon500",
                     ),
                 )
 
@@ -144,8 +174,10 @@ class AvatarControllerTest {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(AVATAR_ID))
                 .andExpect(jsonPath("$.nickname").value("새아바타"))
+                .andExpect(jsonPath("$.generationStatus").value("COMPLETED"))
                 .andExpect(jsonPath("$.imageUrl").value("https://example.com/avatar.png"))
                 .andExpect(jsonPath("$.passUrl").value("Aikon500"))
+                .andExpect(jsonPath("$.qrUrl").value("https://aikon.example.com/pass/Aikon500"))
         }
 
         @Test
@@ -364,6 +396,21 @@ class AvatarControllerTest {
     }
 
     @Nested
+    @DisplayName("DELETE /avatars 는")
+    inner class DeleteAllAvatars {
+        @Test
+        @DisplayName("유효한 요청이면 204를 반환하고 서비스를 호출한다")
+        fun `returns 204 and calls service`() {
+            // When & Then
+            mockMvc
+                .perform(delete("/avatars"))
+                .andExpect(status().isNoContent)
+
+            verify(deleteAllAvatarsService).execute()
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /avatars/{avatarId} 는")
     inner class DeleteAvatar {
         @Test
@@ -412,11 +459,12 @@ class AvatarControllerTest {
 
         private fun reqDtoPart(
             content: String = """{"nickname":"새아바타","gender":"FEMALE","style":"GHIBLI","ageRange":"AGE_20_PLUS"}""",
+            contentType: String = MediaType.APPLICATION_JSON_VALUE,
         ): MockMultipartFile =
             MockMultipartFile(
                 "reqDto",
                 "",
-                MediaType.APPLICATION_JSON_VALUE,
+                contentType,
                 content.toByteArray(),
             )
 

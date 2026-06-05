@@ -13,6 +13,10 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+aikon:
+  frontend:
+    public-base-url: ${FRONTEND_PUBLIC_BASE_URL:}
+
 gemini:
   api-key: ${GEMINI_API_KEY:}
   image-model: ${GEMINI_IMAGE_MODEL:gemini-2.5-flash-image}
