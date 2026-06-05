@@ -31,24 +31,27 @@ class SubscribeAvatarChangesServiceImpl(
 
     @Transactional(readOnly = true)
     override fun execute(): SseEmitter {
-        if (activeConnections.get() >= maxConnections) {
+        if (activeConnections.incrementAndGet() > maxConnections) {
+            activeConnections.decrementAndGet()
             throw AikonException(ErrorCode.SSE_MAX_CONNECTIONS_EXCEEDED)
         }
-        activeConnections.incrementAndGet()
         val emitter = SseEmitter(timeoutMillis)
         emitters.add(emitter)
 
         emitter.onCompletion {
-            emitters.remove(emitter)
-            logger.info("SSE connection closed. active={}", activeConnections.decrementAndGet())
+            if (emitters.remove(emitter)) {
+                logger.info("SSE connection closed. active={}", activeConnections.decrementAndGet())
+            }
         }
         emitter.onTimeout {
-            emitters.remove(emitter)
-            logger.info("SSE connection timed out. active={}", activeConnections.decrementAndGet())
+            if (emitters.remove(emitter)) {
+                logger.info("SSE connection timed out. active={}", activeConnections.decrementAndGet())
+            }
         }
         emitter.onError { e ->
-            emitters.remove(emitter)
-            logger.warn("SSE connection error {}. active={}", e.message, activeConnections.decrementAndGet())
+            if (emitters.remove(emitter)) {
+                logger.warn("SSE connection error {}. active={}", e.message, activeConnections.decrementAndGet())
+            }
         }
 
         logger.info("SSE connection opened. active={}", activeConnections.get())
@@ -83,8 +86,11 @@ class SubscribeAvatarChangesServiceImpl(
             }
         }
         if (deadEmitters.isNotEmpty()) {
-            emitters.removeAll(deadEmitters)
-            activeConnections.addAndGet(-deadEmitters.size)
+            var removedCount = 0
+            deadEmitters.forEach { dead ->
+                if (emitters.remove(dead)) removedCount++
+            }
+            if (removedCount > 0) activeConnections.addAndGet(-removedCount)
         }
     }
 
@@ -107,10 +113,10 @@ class SubscribeAvatarChangesServiceImpl(
                 )
             } catch (exception: IOException) {
                 logger.warn("Removed failed avatar change emitter {}", exception.message)
-                emitters.remove(emitter)
+                if (emitters.remove(emitter)) activeConnections.decrementAndGet()
             } catch (exception: IllegalStateException) {
                 logger.warn("Removed closed avatar change emitter {}", exception.message)
-                emitters.remove(emitter)
+                if (emitters.remove(emitter)) activeConnections.decrementAndGet()
             }
         }
     }
