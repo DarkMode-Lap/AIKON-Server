@@ -1,5 +1,6 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -15,6 +16,8 @@ class DeleteAvatarServiceImpl(
     private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
 ) : DeleteAvatarService {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     override fun execute(avatarId: Long) {
         val avatar =
@@ -38,7 +41,7 @@ class DeleteAvatarServiceImpl(
         try {
             avatarImageStorage.delete(imageUrl)
         } catch (exception: Exception) {
-            throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, cause = exception)
+            logger.warn("Failed to delete avatar image {} from storage", imageUrl, exception)
         }
     }
 }
