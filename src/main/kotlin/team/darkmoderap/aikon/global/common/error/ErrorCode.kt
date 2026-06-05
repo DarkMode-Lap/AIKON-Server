@@ -13,4 +13,5 @@ enum class ErrorCode(
     AVATAR_PASS_CODE_ASSIGNMENT_FAILED("아바타 패스 코드 배정에 실패하였습니다.", 409),
     AVATAR_IMAGE_GENERATION_FAILED("아바타 이미지 생성에 실패하였습니다.", 502),
     AVATAR_IMAGE_DELETE_FAILED("아바타 이미지 삭제에 실패하였습니다.", 502),
+    SSE_MAX_CONNECTIONS_EXCEEDED("SSE 최대 연결 수를 초과하였습니다.", 429),
 }

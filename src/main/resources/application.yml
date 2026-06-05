@@ -16,6 +16,10 @@ springdoc:
 aikon:
   frontend:
     public-base-url: ${FRONTEND_PUBLIC_BASE_URL:}
+  sse:
+    timeout-millis: 1800000
+    heartbeat-interval-millis: 30000
+    max-connections: 100
 
 gemini:
   api-key: ${GEMINI_API_KEY:}
