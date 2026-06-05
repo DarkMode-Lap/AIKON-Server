@@ -199,6 +199,53 @@ class AvatarControllerTest {
     }
 
     @Nested
+    @DisplayName("GET /avatars/pass/{passUrl} 은")
+    inner class GetAvatarByPassUrl {
+        @Test
+        @DisplayName("아바타가 존재하면 200과 응답 본문을 반환한다")
+        fun `returns 200 when avatar exists`() {
+            // Given
+            Mockito
+                .`when`(getAvatarByPassService.execute("Aikon500"))
+                .thenReturn(
+                    GetAvatarResDto(
+                        id = AVATAR_ID,
+                        nickname = "새아바타",
+                        generationStatus = GenerationStatus.COMPLETED,
+                        imageUrl = "https://example.com/avatar.png",
+                        passUrl = "Aikon500",
+                        qrUrl = "https://aikon.example.com/pass/Aikon500",
+                    ),
+                )
+
+            // When & Then
+            mockMvc
+                .perform(get("/avatars/pass/{passUrl}", "Aikon500"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(AVATAR_ID))
+                .andExpect(jsonPath("$.nickname").value("새아바타"))
+                .andExpect(jsonPath("$.generationStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.imageUrl").value("https://example.com/avatar.png"))
+                .andExpect(jsonPath("$.passUrl").value("Aikon500"))
+                .andExpect(jsonPath("$.qrUrl").value("https://aikon.example.com/pass/Aikon500"))
+        }
+
+        @Test
+        @DisplayName("아바타가 없으면 404를 반환한다")
+        fun `returns 404 when avatar not found`() {
+            // Given
+            willThrow(AikonException(ErrorCode.AVATAR_NOT_FOUND))
+                .given(getAvatarByPassService)
+                .execute("Aikon500")
+
+            // When & Then
+            mockMvc
+                .perform(get("/avatars/pass/{passUrl}", "Aikon500"))
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
     @DisplayName("GET /avatars/changes 는")
     inner class SubscribeAvatarChanges {
         @Test
