@@ -27,14 +27,18 @@ class CreateAvatarServiceImpl(
     ): CreateAvatarResDto {
         val sourceImage = image.toSourceImage()
         val passCode = allocatePassCode()
+        val nickname = reqDto.nickname ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
+        val gender = reqDto.gender ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
+        val style = reqDto.style ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
+        val ageRange = reqDto.ageRange ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
         val avatar =
             try {
                 avatarRepository.saveAndFlush(
                     AvatarEntity(
-                        nickname = reqDto.nickname ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
-                        gender = reqDto.gender ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
-                        style = reqDto.style ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
-                        ageRange = reqDto.ageRange ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE),
+                        nickname = nickname,
+                        gender = gender,
+                        style = style,
+                        ageRange = ageRange,
                         generationStatus = GenerationStatus.PROCESSING,
                         passUrl = passCode,
                     ),

@@ -90,6 +90,60 @@ class UpdateAvatarServiceImplTest {
             // Then
             assertEquals(ErrorCode.AVATAR_GENERATION_IN_PROGRESS, exception.errorCode)
         }
+
+        @Test
+        @DisplayName("닉네임이 null이면 400 예외를 던진다")
+        fun `throws invalid input when nickname is null`() {
+            // Given
+            val avatar = avatar(GenerationStatus.COMPLETED)
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+            val reqDto = UpdateAvatarReqDto(null, Gender.FEMALE, AgeRange.AGE_20_PLUS)
+
+            // When
+            val exception =
+                assertThrows<AikonException> {
+                    updateAvatarService.execute(AVATAR_ID, reqDto)
+                }
+
+            // Then
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.errorCode)
+        }
+
+        @Test
+        @DisplayName("성별이 null이면 400 예외를 던진다")
+        fun `throws invalid input when gender is null`() {
+            // Given
+            val avatar = avatar(GenerationStatus.COMPLETED)
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+            val reqDto = UpdateAvatarReqDto("새이름", null, AgeRange.AGE_20_PLUS)
+
+            // When
+            val exception =
+                assertThrows<AikonException> {
+                    updateAvatarService.execute(AVATAR_ID, reqDto)
+                }
+
+            // Then
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.errorCode)
+        }
+
+        @Test
+        @DisplayName("나이대가 null이면 400 예외를 던진다")
+        fun `throws invalid input when age range is null`() {
+            // Given
+            val avatar = avatar(GenerationStatus.COMPLETED)
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+            val reqDto = UpdateAvatarReqDto("새이름", Gender.FEMALE, null)
+
+            // When
+            val exception =
+                assertThrows<AikonException> {
+                    updateAvatarService.execute(AVATAR_ID, reqDto)
+                }
+
+            // Then
+            assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.errorCode)
+        }
     }
 
     companion object {
