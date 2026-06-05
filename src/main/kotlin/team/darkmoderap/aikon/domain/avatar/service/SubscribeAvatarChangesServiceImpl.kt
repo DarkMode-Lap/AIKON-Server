@@ -36,26 +36,31 @@ class SubscribeAvatarChangesServiceImpl(
             throw AikonException(ErrorCode.SSE_MAX_CONNECTIONS_EXCEEDED)
         }
         val emitter = SseEmitter(timeoutMillis)
-        emitters.add(emitter)
+        try {
+            emitters.add(emitter)
 
-        emitter.onCompletion {
-            if (emitters.remove(emitter)) {
-                logger.info("SSE connection closed. active={}", activeConnections.decrementAndGet())
+            emitter.onCompletion {
+                if (emitters.remove(emitter)) {
+                    logger.info("SSE connection closed. active={}", activeConnections.decrementAndGet())
+                }
             }
-        }
-        emitter.onTimeout {
-            if (emitters.remove(emitter)) {
-                logger.info("SSE connection timed out. active={}", activeConnections.decrementAndGet())
+            emitter.onTimeout {
+                if (emitters.remove(emitter)) {
+                    logger.info("SSE connection timed out. active={}", activeConnections.decrementAndGet())
+                }
             }
-        }
-        emitter.onError { e ->
-            if (emitters.remove(emitter)) {
-                logger.warn("SSE connection error {}. active={}", e.message, activeConnections.decrementAndGet())
+            emitter.onError { e ->
+                if (emitters.remove(emitter)) {
+                    logger.warn("SSE connection error {}. active={}", e.message, activeConnections.decrementAndGet())
+                }
             }
-        }
 
-        logger.info("SSE connection opened. active={}", activeConnections.get())
-        send(emitter, findAvatarChanges())
+            logger.info("SSE connection opened. active={}", activeConnections.get())
+            send(emitter, findAvatarChanges())
+        } catch (e: Throwable) {
+            if (emitters.remove(emitter)) activeConnections.decrementAndGet()
+            throw e
+        }
 
         return emitter
     }
