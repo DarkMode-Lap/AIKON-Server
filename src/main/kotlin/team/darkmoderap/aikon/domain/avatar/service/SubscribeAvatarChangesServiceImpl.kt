@@ -36,6 +36,7 @@ class SubscribeAvatarChangesServiceImpl(
     }
 
     @Async
+    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handleAvatarListChanged(event: AvatarListChangedEvent) {
         val avatarChanges = findAvatarChanges()

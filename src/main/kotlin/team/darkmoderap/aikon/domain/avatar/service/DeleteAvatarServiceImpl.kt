@@ -1,9 +1,12 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
@@ -15,6 +18,8 @@ class DeleteAvatarServiceImpl(
     private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
 ) : DeleteAvatarService {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     override fun execute(avatarId: Long) {
         val avatar =
@@ -35,10 +40,24 @@ class DeleteAvatarServiceImpl(
             return
         }
 
-        try {
-            avatarImageStorage.delete(imageUrl)
-        } catch (exception: Exception) {
-            throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, cause = exception)
+        val deleteAction = {
+            try {
+                avatarImageStorage.delete(imageUrl)
+            } catch (exception: Exception) {
+                logger.warn("Failed to delete avatar image {} from storage", imageUrl, exception)
+            }
+        }
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        deleteAction()
+                    }
+                },
+            )
+        } else {
+            deleteAction()
         }
     }
 }

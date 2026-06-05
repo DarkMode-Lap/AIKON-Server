@@ -74,8 +74,8 @@ class DeleteAvatarServiceImplTest {
         }
 
         @Test
-        @DisplayName("이미지 삭제에 실패하면 502 예외를 던지고 아바타를 삭제하지 않는다")
-        fun `throws bad gateway when image delete fails`() {
+        @DisplayName("S3 이미지 삭제에 실패해도 아바타는 정상 삭제한다")
+        fun `deletes avatar even when image delete fails`() {
             // Given
             val avatar = buildAvatar(GenerationStatus.COMPLETED, IMAGE_URL)
             given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
@@ -85,14 +85,11 @@ class DeleteAvatarServiceImplTest {
                 .delete(IMAGE_URL)
 
             // When
-            val exception =
-                assertThrows<AikonException> {
-                    deleteAvatarService.execute(AVATAR_ID)
-                }
+            deleteAvatarService.execute(AVATAR_ID)
 
             // Then
-            assertEquals(ErrorCode.AVATAR_IMAGE_DELETE_FAILED, exception.errorCode)
-            verify(avatarRepository, never()).delete(any())
+            verify(avatarRepository).delete(avatar)
+            verify(eventPublisher).publishEvent(anyEvent())
         }
 
         @Test
