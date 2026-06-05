@@ -37,6 +37,7 @@ import team.darkmoderap.aikon.domain.avatar.dto.UpdateDefaultStyleReqDto
 import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAllAvatarsService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.GetAvatarByPassService
 import team.darkmoderap.aikon.domain.avatar.service.GetAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.SubscribeAvatarChangesService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateAvatarService
@@ -51,6 +52,7 @@ import team.darkmoderap.aikon.global.common.error.dto.ErrorResponse
 class AvatarController(
     private val createAvatarService: CreateAvatarService,
     private val getAvatarService: GetAvatarService,
+    private val getAvatarByPassService: GetAvatarByPassService,
     private val subscribeAvatarChangesService: SubscribeAvatarChangesService,
     private val updateAvatarService: UpdateAvatarService,
     private val updateDefaultStyleService: UpdateDefaultStyleService,
@@ -93,6 +95,20 @@ class AvatarController(
     fun getAvatar(
         @PathVariable avatarId: Long,
     ): GetAvatarResDto = getAvatarService.execute(avatarId)
+
+    @Operation(summary = "패스 URL로 아바타 단건 조회")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "조회 성공"),
+        ApiResponse(
+            responseCode = "404",
+            description = "아바타를 찾을 수 없음",
+            content = [Content(schema = Schema(implementation = ErrorResponse::class))],
+        ),
+    )
+    @GetMapping("/pass/{passUrl}")
+    fun getAvatarByPassUrl(
+        @PathVariable passUrl: String,
+    ): GetAvatarResDto = getAvatarByPassService.execute(passUrl)
 
     @Operation(
         summary = "아바타 목록 변경 SSE 구독",

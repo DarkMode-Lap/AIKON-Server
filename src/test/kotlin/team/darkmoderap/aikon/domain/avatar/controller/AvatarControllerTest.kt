@@ -35,6 +35,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAllAvatarsService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.GetAvatarByPassService
 import team.darkmoderap.aikon.domain.avatar.service.GetAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.SubscribeAvatarChangesService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateAvatarService
@@ -46,6 +47,7 @@ import team.darkmoderap.aikon.global.common.error.handler.GlobalExceptionHandler
 class AvatarControllerTest {
     private val createAvatarService = mock(CreateAvatarService::class.java)
     private val getAvatarService = mock(GetAvatarService::class.java)
+    private val getAvatarByPassService = mock(GetAvatarByPassService::class.java)
     private val subscribeAvatarChangesService = mock(SubscribeAvatarChangesService::class.java)
     private val updateAvatarService = mock(UpdateAvatarService::class.java)
     private val updateDefaultStyleService = mock(UpdateDefaultStyleService::class.java)
@@ -58,6 +60,7 @@ class AvatarControllerTest {
                 AvatarController(
                     createAvatarService,
                     getAvatarService,
+                    getAvatarByPassService,
                     subscribeAvatarChangesService,
                     updateAvatarService,
                     updateDefaultStyleService,
