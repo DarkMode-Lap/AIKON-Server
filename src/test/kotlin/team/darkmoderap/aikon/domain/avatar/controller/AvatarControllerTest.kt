@@ -35,6 +35,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAllAvatarsService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.GetAvatarByPassService
 import team.darkmoderap.aikon.domain.avatar.service.GetAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.SubscribeAvatarChangesService
 import team.darkmoderap.aikon.domain.avatar.service.UpdateAvatarService
@@ -46,6 +47,7 @@ import team.darkmoderap.aikon.global.common.error.handler.GlobalExceptionHandler
 class AvatarControllerTest {
     private val createAvatarService = mock(CreateAvatarService::class.java)
     private val getAvatarService = mock(GetAvatarService::class.java)
+    private val getAvatarByPassService = mock(GetAvatarByPassService::class.java)
     private val subscribeAvatarChangesService = mock(SubscribeAvatarChangesService::class.java)
     private val updateAvatarService = mock(UpdateAvatarService::class.java)
     private val updateDefaultStyleService = mock(UpdateDefaultStyleService::class.java)
@@ -58,6 +60,7 @@ class AvatarControllerTest {
                 AvatarController(
                     createAvatarService,
                     getAvatarService,
+                    getAvatarByPassService,
                     subscribeAvatarChangesService,
                     updateAvatarService,
                     updateDefaultStyleService,
@@ -191,6 +194,53 @@ class AvatarControllerTest {
             // When & Then
             mockMvc
                 .perform(get("/avatars/{avatarId}", AVATAR_ID))
+                .andExpect(status().isNotFound)
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /avatars/pass/{passUrl} 은")
+    inner class GetAvatarByPassUrl {
+        @Test
+        @DisplayName("아바타가 존재하면 200과 응답 본문을 반환한다")
+        fun `returns 200 when avatar exists`() {
+            // Given
+            Mockito
+                .`when`(getAvatarByPassService.execute("Aikon500"))
+                .thenReturn(
+                    GetAvatarResDto(
+                        id = AVATAR_ID,
+                        nickname = "새아바타",
+                        generationStatus = GenerationStatus.COMPLETED,
+                        imageUrl = "https://example.com/avatar.png",
+                        passUrl = "Aikon500",
+                        qrUrl = "https://aikon.example.com/pass/Aikon500",
+                    ),
+                )
+
+            // When & Then
+            mockMvc
+                .perform(get("/avatars/pass/{passUrl}", "Aikon500"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(AVATAR_ID))
+                .andExpect(jsonPath("$.nickname").value("새아바타"))
+                .andExpect(jsonPath("$.generationStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.imageUrl").value("https://example.com/avatar.png"))
+                .andExpect(jsonPath("$.passUrl").value("Aikon500"))
+                .andExpect(jsonPath("$.qrUrl").value("https://aikon.example.com/pass/Aikon500"))
+        }
+
+        @Test
+        @DisplayName("아바타가 없으면 404를 반환한다")
+        fun `returns 404 when avatar not found`() {
+            // Given
+            willThrow(AikonException(ErrorCode.AVATAR_NOT_FOUND))
+                .given(getAvatarByPassService)
+                .execute("Aikon500")
+
+            // When & Then
+            mockMvc
+                .perform(get("/avatars/pass/{passUrl}", "Aikon500"))
                 .andExpect(status().isNotFound)
         }
     }
