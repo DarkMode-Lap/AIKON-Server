@@ -124,7 +124,7 @@ class AvatarController(
             ),
         ],
     )
-    @GetMapping("/changes", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @GetMapping("/changes")
     fun subscribeAvatarChanges(): SseEmitter = subscribeAvatarChangesService.execute()
 
     @Operation(summary = "아바타 수정")
