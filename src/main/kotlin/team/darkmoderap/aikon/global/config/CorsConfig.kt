@@ -10,9 +10,12 @@ class CorsConfig(
     @Value("\${aikon.frontend.public-base-url}") private val frontendPublicBaseUrl: String,
 ) : WebMvcConfigurer {
     override fun addCorsMappings(registry: CorsRegistry) {
+        if (frontendPublicBaseUrl.isBlank()) return
+
+        val origins = frontendPublicBaseUrl.split(",").map { it.trim() }.toTypedArray()
         registry
             .addMapping("/**")
-            .allowedOrigins(frontendPublicBaseUrl)
+            .allowedOrigins(*origins)
             .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             .allowedHeaders("*")
     }
