@@ -1,11 +1,12 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.BDDMockito.given
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -17,14 +18,24 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
+import team.darkmoderap.aikon.global.common.error.AikonException
 
 @ExtendWith(MockitoExtension::class)
 class SubscribeAvatarChangesServiceImplTest {
     @Mock
     private lateinit var avatarRepository: AvatarRepository
 
-    @InjectMocks
     private lateinit var subscribeAvatarChangesService: SubscribeAvatarChangesServiceImpl
+
+    @BeforeEach
+    fun setUp() {
+        subscribeAvatarChangesService =
+            SubscribeAvatarChangesServiceImpl(
+                avatarRepository = avatarRepository,
+                timeoutMillis = 5000L,
+                maxConnections = 2,
+            )
+    }
 
     @Nested
     @DisplayName("execute 메서드는")
@@ -40,6 +51,19 @@ class SubscribeAvatarChangesServiceImplTest {
 
             // Then
             verify(avatarRepository).findAllByOrderByIdAsc()
+        }
+
+        @Test
+        @DisplayName("최대 연결 수를 초과하면 예외를 던진다")
+        fun `throws exception when max connections exceeded`() {
+            // Given
+            given(avatarRepository.findAllByOrderByIdAsc()).willReturn(emptyList())
+            subscribeAvatarChangesService.execute()
+            subscribeAvatarChangesService.execute()
+
+            // When & Then
+            assertThatThrownBy { subscribeAvatarChangesService.execute() }
+                .isInstanceOf(AikonException::class.java)
         }
     }
 
@@ -58,6 +82,21 @@ class SubscribeAvatarChangesServiceImplTest {
 
             // Then
             verify(avatarRepository, times(2)).findAllByOrderByIdAsc()
+        }
+    }
+
+    @Nested
+    @DisplayName("sendHeartbeat 메서드는")
+    inner class SendHeartbeat {
+        @Test
+        @DisplayName("연결된 emitter가 없으면 아무것도 전송하지 않는다")
+        fun `does nothing when no emitters connected`() {
+            // Given — no connections
+
+            // When
+            subscribeAvatarChangesService.sendHeartbeat()
+
+            // Then — no exception thrown
         }
     }
 
