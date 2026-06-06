@@ -1,5 +1,6 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
@@ -14,6 +15,7 @@ class GeminiAvatarImageGenerator(
     @Value("\${gemini.api-key}") private val apiKey: String,
     @Value("\${gemini.image-model}") private val imageModel: String,
 ) : AvatarImageGenerator {
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val restClient =
         RestClient
             .builder()
@@ -36,10 +38,16 @@ class GeminiAvatarImageGenerator(
                 .body(GeminiGenerateContentResponse::class.java)
                 ?: throw AikonException(ErrorCode.AVATAR_IMAGE_GENERATION_FAILED)
 
+        val blocked = response.candidates.filter { it.content == null }
+        if (blocked.isNotEmpty()) {
+            logger.warn("Gemini candidates blocked, finishReasons={}", blocked.map { it.finishReason })
+        }
+
         val inlineData =
             response.candidates
-                .flatMap { candidate -> candidate.content.parts }
-                .mapNotNull { part -> part.inlineData }
+                .mapNotNull { it.content }
+                .flatMap { it.parts }
+                .mapNotNull { it.inlineData }
                 .firstOrNull()
                 ?: throw AikonException(ErrorCode.AVATAR_IMAGE_GENERATION_FAILED)
 
@@ -78,7 +86,8 @@ class GeminiAvatarImageGenerator(
     )
 
     private data class GeminiCandidate(
-        val content: GeminiContent = GeminiContent(),
+        val content: GeminiContent? = null,
+        val finishReason: String? = null,
     )
 
     private data class GeminiContent(
