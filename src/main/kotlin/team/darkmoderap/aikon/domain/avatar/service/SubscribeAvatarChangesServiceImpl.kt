@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
@@ -66,7 +67,7 @@ class SubscribeAvatarChangesServiceImpl(
     }
 
     @Async
-    @Transactional(readOnly = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handleAvatarListChanged(event: AvatarListChangedEvent) {
         val avatarChanges = findAvatarChanges()
