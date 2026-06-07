@@ -30,6 +30,7 @@ class CorsConfig(
 
         val bean = FilterRegistrationBean(CorsFilter(source))
         bean.order = Ordered.HIGHEST_PRECEDENCE
+        bean.isEnabled = frontendPublicBaseUrl.isNotBlank()
         return bean
     }
 }
