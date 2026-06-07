@@ -18,7 +18,7 @@ aikon:
     public-base-url: ${FRONTEND_PUBLIC_BASE_URL:}
   sse:
     timeout-millis: 1800000
-    heartbeat-interval-millis: 30000
+    heartbeat-interval-millis: 10000
     max-connections: 100
 
 gemini:
