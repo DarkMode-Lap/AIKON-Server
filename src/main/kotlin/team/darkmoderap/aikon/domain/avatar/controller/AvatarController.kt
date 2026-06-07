@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import jakarta.validation.Validator
 import org.springframework.http.HttpStatus
@@ -125,7 +126,10 @@ class AvatarController(
         ],
     )
     @GetMapping("/changes")
-    fun subscribeAvatarChanges(): SseEmitter = subscribeAvatarChangesService.execute()
+    fun subscribeAvatarChanges(response: HttpServletResponse): SseEmitter {
+        response.setHeader("X-Accel-Buffering", "no")
+        return subscribeAvatarChangesService.execute()
+    }
 
     @Operation(summary = "아바타 수정")
     @ApiResponses(
