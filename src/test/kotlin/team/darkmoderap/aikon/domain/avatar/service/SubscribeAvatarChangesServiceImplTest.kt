@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given
 import org.mockito.Mock
 import org.mockito.Mockito.verify
@@ -18,6 +19,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
+import team.darkmoderap.aikon.domain.avatar.event.AvatarSseSubscribedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
 
@@ -46,15 +48,15 @@ class SubscribeAvatarChangesServiceImplTest {
     @DisplayName("execute 메서드는")
     inner class Execute {
         @Test
-        @DisplayName("구독을 시작하면 emitter를 이벤트로 발행한다")
-        fun `publishes emitter event when subscription starts`() {
+        @DisplayName("구독을 시작하면 AvatarSseSubscribedEvent를 발행한다")
+        fun `publishes AvatarSseSubscribedEvent when subscription starts`() {
             // Given — no setup needed
 
             // When
-            val emitter = subscribeAvatarChangesService.execute()
+            subscribeAvatarChangesService.execute()
 
             // Then
-            verify(eventPublisher).publishEvent(emitter)
+            verify(eventPublisher).publishEvent(any(AvatarSseSubscribedEvent::class.java))
         }
 
         @Test
