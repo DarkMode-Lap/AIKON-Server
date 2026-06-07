@@ -78,7 +78,7 @@ class SubscribeAvatarChangesServiceImpl(
                     failed = true
                 }
             }
-            if (failed) cleanup(emitter, "heartbeat failed")
+            if (failed) cleanup(emitter, "heartbeat failed", complete = true)
         }
     }
 
@@ -108,15 +108,19 @@ class SubscribeAvatarChangesServiceImpl(
                 failed = true
             }
         }
-        if (failed) cleanup(emitter, "send failed")
+        if (failed) cleanup(emitter, "send failed", complete = true)
     }
 
     private fun cleanup(
         emitter: SseEmitter,
         reason: String,
+        complete: Boolean = false,
     ) {
         if (emitters.remove(emitter)) {
             logger.info("SSE connection {} active={}", reason, emitters.size)
+            if (complete) {
+                runCatching { emitter.complete() }
+            }
         }
     }
 
