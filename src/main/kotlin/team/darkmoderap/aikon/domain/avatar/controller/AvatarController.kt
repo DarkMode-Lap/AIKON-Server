@@ -13,6 +13,7 @@ import jakarta.validation.Valid
 import jakarta.validation.Validator
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.BindException
 import org.springframework.validation.FieldError
@@ -125,7 +126,11 @@ class AvatarController(
         ],
     )
     @GetMapping("/changes")
-    fun subscribeAvatarChanges(): SseEmitter = subscribeAvatarChangesService.execute()
+    fun subscribeAvatarChanges(): ResponseEntity<SseEmitter> =
+        ResponseEntity
+            .ok()
+            .header("X-Accel-Buffering", "no")
+            .body(subscribeAvatarChangesService.execute())
 
     @Operation(summary = "아바타 수정")
     @ApiResponses(
