@@ -2,6 +2,7 @@ package team.darkmoderap.aikon.domain.avatar.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Async
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -22,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @Service
 class SubscribeAvatarChangesServiceImpl(
     private val avatarRepository: AvatarRepository,
+    private val eventPublisher: ApplicationEventPublisher,
     @Value("\${aikon.sse.timeout-millis:1800000}") private val timeoutMillis: Long,
     @Value("\${aikon.sse.max-connections:100}") private val maxConnections: Int,
 ) : SubscribeAvatarChangesService {
@@ -36,32 +38,26 @@ class SubscribeAvatarChangesServiceImpl(
             throw AikonException(ErrorCode.SSE_MAX_CONNECTIONS_EXCEEDED)
         }
         val emitter = SseEmitter(timeoutMillis)
-        try {
-            emitters.add(emitter)
+        emitters.add(emitter)
 
-            emitter.onCompletion {
-                if (emitters.remove(emitter)) {
-                    logger.info("SSE connection closed. active={}", activeConnections.decrementAndGet())
-                }
+        emitter.onCompletion {
+            if (emitters.remove(emitter)) {
+                logger.info("SSE connection closed. active={}", activeConnections.decrementAndGet())
             }
-            emitter.onTimeout {
-                if (emitters.remove(emitter)) {
-                    logger.info("SSE connection timed out. active={}", activeConnections.decrementAndGet())
-                }
+        }
+        emitter.onTimeout {
+            if (emitters.remove(emitter)) {
+                logger.info("SSE connection timed out. active={}", activeConnections.decrementAndGet())
             }
-            emitter.onError { e ->
-                if (emitters.remove(emitter)) {
-                    logger.warn("SSE connection error {}. active={}", e.message, activeConnections.decrementAndGet())
-                }
+        }
+        emitter.onError { e ->
+            if (emitters.remove(emitter)) {
+                logger.warn("SSE connection error {}. active={}", e.message, activeConnections.decrementAndGet())
             }
-
-            logger.info("SSE connection opened. active={}", activeConnections.get())
-            send(emitter, findAvatarChanges())
-        } catch (e: Throwable) {
-            if (emitters.remove(emitter)) activeConnections.decrementAndGet()
-            throw e
         }
 
+        logger.info("SSE connection opened. active={}", activeConnections.get())
+        eventPublisher.publishEvent(AvatarListChangedEvent())
         return emitter
     }
 
