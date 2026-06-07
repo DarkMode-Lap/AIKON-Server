@@ -8,9 +8,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.BDDMockito.given
 import org.mockito.Mock
-import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.context.ApplicationEventPublisher
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
@@ -25,6 +26,9 @@ class SubscribeAvatarChangesServiceImplTest {
     @Mock
     private lateinit var avatarRepository: AvatarRepository
 
+    @Mock
+    private lateinit var eventPublisher: ApplicationEventPublisher
+
     private lateinit var subscribeAvatarChangesService: SubscribeAvatarChangesServiceImpl
 
     @BeforeEach
@@ -32,6 +36,7 @@ class SubscribeAvatarChangesServiceImplTest {
         subscribeAvatarChangesService =
             SubscribeAvatarChangesServiceImpl(
                 avatarRepository = avatarRepository,
+                eventPublisher = eventPublisher,
                 timeoutMillis = 5000L,
                 maxConnections = 2,
             )
@@ -41,23 +46,21 @@ class SubscribeAvatarChangesServiceImplTest {
     @DisplayName("execute 메서드는")
     inner class Execute {
         @Test
-        @DisplayName("구독을 시작하면 현재 아바타 목록을 조회한다")
-        fun `finds current avatar list when subscription starts`() {
-            // Given
-            given(avatarRepository.findAllByOrderByIdAsc()).willReturn(listOf(avatar()))
+        @DisplayName("구독을 시작하면 emitter를 이벤트로 발행한다")
+        fun `publishes emitter event when subscription starts`() {
+            // Given — no setup needed
 
             // When
-            subscribeAvatarChangesService.execute()
+            val emitter = subscribeAvatarChangesService.execute()
 
             // Then
-            verify(avatarRepository).findAllByOrderByIdAsc()
+            verify(eventPublisher).publishEvent(emitter)
         }
 
         @Test
         @DisplayName("최대 연결 수를 초과하면 예외를 던진다")
         fun `throws exception when max connections exceeded`() {
             // Given
-            given(avatarRepository.findAllByOrderByIdAsc()).willReturn(emptyList())
             subscribeAvatarChangesService.execute()
             subscribeAvatarChangesService.execute()
 
@@ -81,7 +84,7 @@ class SubscribeAvatarChangesServiceImplTest {
             subscribeAvatarChangesService.handleAvatarListChanged(AvatarListChangedEvent())
 
             // Then
-            verify(avatarRepository, times(2)).findAllByOrderByIdAsc()
+            verify(avatarRepository).findAllByOrderByIdAsc()
         }
     }
 
