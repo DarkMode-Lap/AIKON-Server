@@ -57,8 +57,14 @@ class SubscribeAvatarChangesServiceImpl(
         }
 
         logger.info("SSE connection opened. active={}", activeConnections.get())
-        eventPublisher.publishEvent(AvatarListChangedEvent())
+        eventPublisher.publishEvent(emitter)
         return emitter
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun handleSubscription(emitter: SseEmitter) {
+        send(emitter, findAvatarChanges())
     }
 
     @Async
