@@ -18,7 +18,6 @@ import team.darkmoderap.aikon.domain.avatar.event.AvatarSseSubscribedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
-import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Service
@@ -32,11 +31,13 @@ class SubscribeAvatarChangesServiceImpl(
     private val emitters = CopyOnWriteArrayList<SseEmitter>()
 
     override fun execute(): SseEmitter {
-        if (emitters.size >= maxConnections) {
-            throw AikonException(ErrorCode.SSE_MAX_CONNECTIONS_EXCEEDED)
-        }
         val emitter = SseEmitter(timeoutMillis)
-        emitters.add(emitter)
+        synchronized(emitters) {
+            if (emitters.size >= maxConnections) {
+                throw AikonException(ErrorCode.SSE_MAX_CONNECTIONS_EXCEEDED)
+            }
+            emitters.add(emitter)
+        }
 
         emitter.onCompletion { cleanup(emitter, "closed") }
         emitter.onTimeout { cleanup(emitter, "timed out") }
@@ -58,6 +59,7 @@ class SubscribeAvatarChangesServiceImpl(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     @Transactional(readOnly = true)
     fun handleAvatarListChanged(event: AvatarListChangedEvent) {
+        if (emitters.isEmpty()) return
         val avatarChanges = findAvatarChanges()
         emitters.forEach { emitter -> send(emitter, avatarChanges) }
     }
@@ -70,11 +72,8 @@ class SubscribeAvatarChangesServiceImpl(
             synchronized(emitter) {
                 try {
                     emitter.send(SseEmitter.event().comment("heartbeat"))
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     logger.warn("Heartbeat send failed {}", e.message)
-                    failed = true
-                } catch (e: IllegalStateException) {
-                    logger.warn("Heartbeat send failed (closed emitter) {}", e.message)
                     failed = true
                 }
             }
@@ -100,11 +99,8 @@ class SubscribeAvatarChangesServiceImpl(
                         .name(EVENT_NAME)
                         .data(avatarChanges),
                 )
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 logger.warn("Send failed, removing emitter {}", e.message)
-                failed = true
-            } catch (e: IllegalStateException) {
-                logger.warn("Send failed (closed emitter) {}", e.message)
                 failed = true
             }
         }
