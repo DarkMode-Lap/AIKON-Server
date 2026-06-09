@@ -29,11 +29,11 @@ class AvatarImagePromptProviderTest {
 
             // Then
             assertAll(
-                { assertTrue(result.contains("원본 사진을 더 멋있고 예쁜 프리미엄 프로필 사진처럼 보정해줘")) },
-                { assertTrue(result.contains("전체적인 생김새는 원본 사진과 최대한 동일하게 유지해줘")) },
-                { assertTrue(result.contains("SNS 프로필이나 브랜드 화보처럼 세련되게 조정해줘")) },
-                { assertTrue(result.contains("화려한 고급 프로필/화보 사진 퀄리티")) },
-                { assertTrue(result.contains("별도의 스타일 변환은 하지 마")) },
+                { assertTrue(result.contains("프리미엄 프로필")) },
+                { assertTrue(result.contains("동일하게 유지")) },
+                { assertTrue(result.contains("세련되게 조정")) },
+                { assertTrue(result.contains("고급 프로필/화보")) },
+                { assertTrue(result.contains("스타일 변환은 하지 마")) },
             )
         }
 

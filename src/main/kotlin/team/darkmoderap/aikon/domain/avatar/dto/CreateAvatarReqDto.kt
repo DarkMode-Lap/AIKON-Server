@@ -17,7 +17,7 @@ data class CreateAvatarReqDto(
     @Schema(description = "성별 (MALE, FEMALE)")
     @field:NotNull
     val gender: Gender?,
-    @Schema(description = "스타일 (STUDIO, ENHANCED, ZOOTOPIA, TRADITIONAL_HANBOK, DISNEY_PIXAR, GHIBLI, LIGHT_ART)")
+    @Schema(description = Style.SCHEMA_DESCRIPTION)
     @field:NotNull
     val style: Style?,
     @Schema(description = "연령대 (AGE_0_7, AGE_8_13, AGE_14_19, AGE_20_PLUS)")

@@ -13,7 +13,7 @@ data class AvatarChangeResDto(
     val id: Long,
     @Schema(description = "닉네임", example = "홍길동")
     val nickname: String,
-    @Schema(description = "스타일 (STUDIO, ENHANCED, ZOOTOPIA, TRADITIONAL_HANBOK, DISNEY_PIXAR, GHIBLI, LIGHT_ART)")
+    @Schema(description = Style.SCHEMA_DESCRIPTION)
     val style: Style,
     @Schema(description = "성별 (MALE, FEMALE)")
     val gender: Gender,
