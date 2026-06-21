@@ -42,6 +42,44 @@ class S3AvatarImageStorage(
         }
     }
 
+    override fun uploadSourceImage(
+        avatarId: Long,
+        bytes: ByteArray,
+        mimeType: String,
+    ): String {
+        if (bucket.isBlank()) {
+            throw AikonException(ErrorCode.AVATAR_IMAGE_GENERATION_FAILED)
+        }
+
+        val ext = mimeType.toExtension()
+        val key = "sources/$avatarId.$ext"
+        val request =
+            PutObjectRequest
+                .builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType(mimeType)
+                .build()
+
+        s3Client.putObject(request, RequestBody.fromBytes(bytes))
+
+        return "s3://$bucket/$key"
+    }
+
+    override fun toPublicUrl(s3Uri: String): String {
+        val key =
+            if (s3Uri.startsWith("s3://")) {
+                s3Uri.substringAfter("s3://").substringAfter("/")
+            } else {
+                s3Uri
+            }
+        return if (publicBaseUrl.isBlank()) {
+            "https://$bucket.s3.$region.amazonaws.com/$key"
+        } else {
+            "${publicBaseUrl.trimEnd('/')}/$key"
+        }
+    }
+
     override fun delete(imageUrl: String) {
         if (bucket.isBlank()) {
             throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED)
@@ -61,6 +99,11 @@ class S3AvatarImageStorage(
     }
 
     private fun extractKey(imageUrl: String): String? {
+        val s3Prefix = "s3://$bucket/"
+        if (imageUrl.startsWith(s3Prefix)) {
+            return imageUrl.removePrefix(s3Prefix)
+        }
+
         val normalizedPublicBaseUrl = publicBaseUrl.trimEnd('/')
         if (normalizedPublicBaseUrl.isNotBlank() && imageUrl.startsWith("$normalizedPublicBaseUrl/")) {
             return imageUrl.removePrefix("$normalizedPublicBaseUrl/")

@@ -9,6 +9,7 @@ import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarResDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
+import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.event.AvatarCreatedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
@@ -31,6 +32,10 @@ class CreateAvatarServiceImpl(
         val gender = reqDto.gender ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
         val style = reqDto.style ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
         val ageRange = reqDto.ageRange ?: throw AikonException(ErrorCode.INVALID_INPUT_VALUE)
+
+        if (style == Style.ENHANCED) {
+            throw AikonException(ErrorCode.AVATAR_STYLE_NOT_SUPPORTED_BY_AI)
+        }
         val avatar =
             try {
                 avatarRepository.saveAndFlush(

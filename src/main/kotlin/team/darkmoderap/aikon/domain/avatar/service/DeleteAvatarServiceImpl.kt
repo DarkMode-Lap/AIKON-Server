@@ -31,6 +31,7 @@ class DeleteAvatarServiceImpl(
         }
 
         deleteImageIfExists(avatar.imageUrl)
+        deleteImageIfExists(avatar.sourceImageUri)
         avatarRepository.delete(avatar)
         eventPublisher.publishEvent(AvatarListChangedEvent())
     }

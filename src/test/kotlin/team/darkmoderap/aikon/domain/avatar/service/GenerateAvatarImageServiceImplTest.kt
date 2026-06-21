@@ -1,6 +1,5 @@
 package team.darkmoderap.aikon.domain.avatar.service
 
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -8,8 +7,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.BDDMockito.given
 import org.mockito.Mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.context.ApplicationEventPublisher
@@ -18,6 +20,8 @@ import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.TransactionStatus
 import org.springframework.transaction.support.SimpleTransactionStatus
 import org.springframework.transaction.support.TransactionTemplate
+import team.darkmoderap.aikon.domain.avatar.dto.FastApiGenerationReqDto
+import team.darkmoderap.aikon.domain.avatar.dto.FastApiGenerationResDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
@@ -25,6 +29,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
+import team.darkmoderap.aikon.global.client.FastApiClient
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
 import java.util.Optional
@@ -35,10 +40,10 @@ class GenerateAvatarImageServiceImplTest {
     private lateinit var avatarRepository: AvatarRepository
 
     @Mock
-    private lateinit var avatarImageGenerator: AvatarImageGenerator
+    private lateinit var avatarImageStorage: AvatarImageStorage
 
     @Mock
-    private lateinit var avatarImageStorage: AvatarImageStorage
+    private lateinit var fastApiClient: FastApiClient
 
     @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
@@ -50,10 +55,11 @@ class GenerateAvatarImageServiceImplTest {
         generateAvatarImageService =
             GenerateAvatarImageServiceImpl(
                 avatarRepository,
-                avatarImageGenerator,
                 avatarImageStorage,
+                fastApiClient,
                 eventPublisher,
                 TransactionTemplate(NoOpTransactionManager()),
+                API_BASE_URL,
             )
     }
 
@@ -61,38 +67,56 @@ class GenerateAvatarImageServiceImplTest {
     @DisplayName("execute 메서드는")
     inner class Execute {
         @Test
-        @DisplayName("이미지 생성에 성공하면 이미지 URL을 저장하고 완료 상태로 변경한다")
-        fun `completes avatar when image generation succeeds`() {
+        @DisplayName("소스 이미지 업로드 및 FastAPI 요청에 성공하면 jobId를 저장한다")
+        fun `saves jobId when source upload and fastapi request succeed`() {
             // Given
             val avatar = avatar()
-            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar), Optional.of(avatar))
-            given(avatarImageGenerator.generate(anyImageGenerationCommand()))
-                .willReturn(GeneratedAvatarImage(byteArrayOf(4, 5, 6), "image/png"))
-            given(avatarImageStorage.upload(anyLong(), anyGeneratedImage())).willReturn(IMAGE_URL)
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+            given(avatarImageStorage.uploadSourceImage(anyLong(), anyByteArray(), anyString()))
+                .willReturn(SOURCE_URI)
+            given(fastApiClient.requestAvatarGeneration(anyFastApiGenerationReqDto()))
+                .willReturn(FastApiGenerationResDto(jobId = JOB_ID, status = "PENDING"))
 
             // When
             generateAvatarImageService.execute(AVATAR_ID, sourceImage())
 
             // Then
-            assertEquals(GenerationStatus.COMPLETED, avatar.generationStatus)
-            assertEquals(IMAGE_URL, avatar.imageUrl)
-            verify(eventPublisher).publishEvent(anyEvent())
+            verify(fastApiClient).requestAvatarGeneration(anyFastApiGenerationReqDto())
+            verify(eventPublisher, never()).publishEvent(anyEvent())
         }
 
         @Test
-        @DisplayName("이미지 생성에 실패하면 실패 상태로 변경한다")
-        fun `fails avatar when image generation fails`() {
+        @DisplayName("소스 이미지 업로드에 실패하면 실패 상태로 변경하고 SSE 이벤트를 발행한다")
+        fun `fails avatar when source image upload fails`() {
             // Given
             val avatar = avatar()
-            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar), Optional.of(avatar))
-            given(avatarImageGenerator.generate(anyImageGenerationCommand()))
-                .willThrow(AikonException(ErrorCode.AVATAR_IMAGE_GENERATION_FAILED))
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+            given(avatarImageStorage.uploadSourceImage(anyLong(), anyByteArray(), anyString()))
+                .willThrow(RuntimeException("S3 upload failed"))
 
             // When
             generateAvatarImageService.execute(AVATAR_ID, sourceImage())
 
             // Then
-            assertEquals(GenerationStatus.FAILED, avatar.generationStatus)
+            verify(eventPublisher).publishEvent(anyEvent())
+            verify(fastApiClient, never()).requestAvatarGeneration(anyFastApiGenerationReqDto())
+        }
+
+        @Test
+        @DisplayName("FastAPI 요청에 실패하면 실패 상태로 변경하고 SSE 이벤트를 발행한다")
+        fun `fails avatar when fastapi request fails`() {
+            // Given
+            val avatar = avatar()
+            given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar))
+            given(avatarImageStorage.uploadSourceImage(anyLong(), anyByteArray(), anyString()))
+                .willReturn(SOURCE_URI)
+            given(fastApiClient.requestAvatarGeneration(anyFastApiGenerationReqDto()))
+                .willThrow(AikonException(ErrorCode.FASTAPI_REQUEST_FAILED))
+
+            // When
+            generateAvatarImageService.execute(AVATAR_ID, sourceImage())
+
+            // Then
             verify(eventPublisher).publishEvent(anyEvent())
         }
 
@@ -109,13 +133,15 @@ class GenerateAvatarImageServiceImplTest {
                 }
 
             // Then
-            assertEquals(ErrorCode.AVATAR_NOT_FOUND, exception.errorCode)
+            assert(exception.errorCode == ErrorCode.AVATAR_NOT_FOUND)
         }
     }
 
     companion object {
         private const val AVATAR_ID = 1L
-        private const val IMAGE_URL = "https://cdn.example.com/avatars/1.png"
+        private const val JOB_ID = "test-job-id"
+        private const val SOURCE_URI = "s3://bucket/sources/1.png"
+        private const val API_BASE_URL = "https://api.aikon.example.com"
 
         private fun avatar(): AvatarEntity =
             AvatarEntity(
@@ -134,25 +160,21 @@ class GenerateAvatarImageServiceImplTest {
                 mimeType = "image/png",
             )
 
-        private fun anyImageGenerationCommand(): AvatarImageGenerationCommand {
-            any(AvatarImageGenerationCommand::class.java)
-            return AvatarImageGenerationCommand(
-                style = Style.GHIBLI,
-                gender = Gender.FEMALE,
-                ageRange = AgeRange.AGE_20_PLUS,
-                sourceImage = byteArrayOf(1, 2, 3),
-                sourceMimeType = "image/png",
+        private fun anyFastApiGenerationReqDto(): FastApiGenerationReqDto {
+            any(FastApiGenerationReqDto::class.java)
+            return FastApiGenerationReqDto(
+                avatarId = AVATAR_ID,
+                sourceImageUri = SOURCE_URI,
+                style = "GHIBLI",
+                gender = "FEMALE",
+                ageRange = "AGE_20_PLUS",
+                callbackUrl = "$API_BASE_URL/internal/ai/avatar-generations/callback",
             )
         }
 
-        private fun anyGeneratedImage(): GeneratedAvatarImage {
-            any(GeneratedAvatarImage::class.java)
-            return GeneratedAvatarImage(byteArrayOf(4, 5, 6), "image/png")
-        }
-
-        private fun anyLong(): Long {
-            org.mockito.ArgumentMatchers.anyLong()
-            return 0L
+        private fun anyByteArray(): ByteArray {
+            any(ByteArray::class.java)
+            return byteArrayOf()
         }
 
         private fun anyEvent(): Any {
