@@ -13,5 +13,10 @@ enum class ErrorCode(
     AVATAR_PASS_CODE_ASSIGNMENT_FAILED("아바타 패스 코드 배정에 실패하였습니다.", 409),
     AVATAR_IMAGE_GENERATION_FAILED("아바타 이미지 생성에 실패하였습니다.", 502),
     AVATAR_IMAGE_DELETE_FAILED("아바타 이미지 삭제에 실패하였습니다.", 502),
+    AVATAR_STYLE_NOT_SUPPORTED_BY_AI("해당 스타일은 현재 AI 서버에서 지원되지 않습니다.", 422),
+    FASTAPI_REQUEST_FAILED("AI 서버 요청에 실패하였습니다.", 502),
+    INVALID_INTERNAL_SECRET("내부 인증에 실패하였습니다.", 401),
+    INVALID_AVATAR_JOB_ID("잘못된 AI 작업 식별자입니다.", 400),
+    AVATAR_NOT_COMPLETED("아바타 생성이 완료되지 않은 상태입니다.", 409),
     SSE_MAX_CONNECTIONS_EXCEEDED("SSE 최대 연결 수를 초과하였습니다.", 429),
 }

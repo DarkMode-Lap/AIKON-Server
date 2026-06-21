@@ -13,7 +13,14 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+fastapi:
+  base-url: ${FASTAPI_BASE_URL:http://localhost:8000}
+
+internal:
+  callback-secret: ${INTERNAL_CALLBACK_SECRET:dev-secret}
+
 aikon:
+  api-base-url: ${API_BASE_URL:}
   frontend:
     public-base-url: ${FRONTEND_PUBLIC_BASE_URL:}
   sse:
