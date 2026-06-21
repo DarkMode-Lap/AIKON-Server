@@ -34,7 +34,7 @@ class AvatarFeedback(
     @CollectionTable(name = "avatar_feedback_reasons", joinColumns = [JoinColumn(name = "feedback_id")])
     @Enumerated(EnumType.STRING)
     @Column(name = "reason", nullable = false)
-    var reasons: List<FeedbackReason>,
+    var reasons: MutableList<FeedbackReason>,
     @Column(length = 500)
     var comment: String? = null,
     @Column(name = "training_consent", nullable = false)
@@ -53,7 +53,8 @@ class AvatarFeedback(
         feedbackUseConsent: Boolean,
     ) {
         this.rating = rating
-        this.reasons = reasons
+        this.reasons.clear()
+        this.reasons.addAll(reasons)
         this.comment = comment
         this.trainingConsent = trainingConsent
         this.feedbackUseConsent = feedbackUseConsent

@@ -3,6 +3,8 @@ package team.darkmoderap.aikon.domain.avatar.service
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import team.darkmoderap.aikon.domain.avatar.dto.CreateFeedbackReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.FastApiFeedbackReqDto
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarFeedback
@@ -51,7 +53,7 @@ class CreateFeedbackServiceImpl(
                 AvatarFeedback(
                     avatar = avatar,
                     rating = rating,
-                    reasons = reasons,
+                    reasons = reasons.toMutableList(),
                     comment = reqDto.comment,
                     trainingConsent = trainingConsent,
                     feedbackUseConsent = feedbackUseConsent,
@@ -75,6 +77,16 @@ class CreateFeedbackServiceImpl(
                 modelName = avatar.modelName,
             )
 
-        fastApiClient.sendFeedback(fastApiReqDto)
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        fastApiClient.sendFeedback(fastApiReqDto)
+                    }
+                },
+            )
+        } else {
+            fastApiClient.sendFeedback(fastApiReqDto)
+        }
     }
 }

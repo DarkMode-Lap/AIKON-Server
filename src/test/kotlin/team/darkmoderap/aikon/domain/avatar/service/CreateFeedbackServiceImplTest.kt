@@ -57,7 +57,7 @@ class CreateFeedbackServiceImplTest {
                 AvatarFeedback(
                     avatar = avatar,
                     rating = FeedbackRating.LIKE,
-                    reasons = listOf(FeedbackReason.FACE_SIMILARITY),
+                    reasons = mutableListOf(FeedbackReason.FACE_SIMILARITY),
                 ),
             )
 
@@ -155,7 +155,7 @@ class CreateFeedbackServiceImplTest {
             AvatarFeedback(
                 avatar = avatar,
                 rating = FeedbackRating.DISLIKE,
-                reasons = listOf(FeedbackReason.AGE_MISMATCH),
+                reasons = mutableListOf(FeedbackReason.AGE_MISMATCH),
                 id = 1L,
             )
 
@@ -173,7 +173,7 @@ class CreateFeedbackServiceImplTest {
             return AvatarFeedback(
                 avatar = completedAvatar(),
                 rating = FeedbackRating.LIKE,
-                reasons = listOf(FeedbackReason.FACE_SIMILARITY),
+                reasons = mutableListOf(FeedbackReason.FACE_SIMILARITY),
             )
         }
 
