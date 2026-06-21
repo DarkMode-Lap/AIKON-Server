@@ -60,7 +60,7 @@ class GenerateAvatarImageServiceImpl(
             avatarRepository.findByIdOrNull(avatarId)?.let { it.sourceImageUri = sourceImageUri }
         }
 
-        val callbackUrl = "$apiBaseUrl/internal/ai/avatar-generations/callback"
+        val callbackUrl = "${apiBaseUrl.trimEnd('/')}/internal/ai/avatar-generations/callback"
 
         val reqDto =
             FastApiGenerationReqDto(

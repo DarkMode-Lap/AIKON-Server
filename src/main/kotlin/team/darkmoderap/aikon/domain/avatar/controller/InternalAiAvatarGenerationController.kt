@@ -12,6 +12,7 @@ import team.darkmoderap.aikon.domain.avatar.dto.AvatarGenerationCallbackReqDto
 import team.darkmoderap.aikon.domain.avatar.service.HandleAvatarGenerationCallbackService
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
+import java.security.MessageDigest
 
 @RestController
 @RequestMapping("/internal/ai/avatar-generations")
@@ -25,7 +26,7 @@ class InternalAiAvatarGenerationController(
         @RequestHeader("X-Internal-Secret") secret: String,
         @RequestBody reqDto: AvatarGenerationCallbackReqDto,
     ) {
-        if (secret != callbackSecret) {
+        if (!MessageDigest.isEqual(secret.toByteArray(), callbackSecret.toByteArray())) {
             throw AikonException(ErrorCode.INVALID_INTERNAL_SECRET)
         }
         handleAvatarGenerationCallbackService.execute(reqDto)

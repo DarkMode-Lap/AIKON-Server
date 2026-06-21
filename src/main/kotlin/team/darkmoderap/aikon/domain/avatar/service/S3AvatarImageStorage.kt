@@ -67,8 +67,12 @@ class S3AvatarImageStorage(
     }
 
     override fun toPublicUrl(s3Uri: String): String {
-        val s3Prefix = "s3://$bucket/"
-        val key = s3Uri.removePrefix(s3Prefix)
+        val key =
+            if (s3Uri.startsWith("s3://")) {
+                s3Uri.substringAfter("s3://").substringAfter("/")
+            } else {
+                s3Uri
+            }
         return if (publicBaseUrl.isBlank()) {
             "https://$bucket.s3.$region.amazonaws.com/$key"
         } else {
