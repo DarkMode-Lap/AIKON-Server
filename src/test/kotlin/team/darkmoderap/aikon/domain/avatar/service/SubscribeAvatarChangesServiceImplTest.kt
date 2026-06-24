@@ -12,6 +12,9 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
+import org.springframework.transaction.TransactionStatus
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
@@ -31,6 +34,12 @@ class SubscribeAvatarChangesServiceImplTest {
     @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
 
+    @Mock
+    private lateinit var transactionManager: PlatformTransactionManager
+
+    @Mock
+    private lateinit var transactionStatus: TransactionStatus
+
     private lateinit var subscribeAvatarChangesService: SubscribeAvatarChangesServiceImpl
 
     @BeforeEach
@@ -39,6 +48,7 @@ class SubscribeAvatarChangesServiceImplTest {
             SubscribeAvatarChangesServiceImpl(
                 avatarRepository = avatarRepository,
                 eventPublisher = eventPublisher,
+                transactionManager = transactionManager,
                 timeoutMillis = 5000L,
                 maxConnections = 2,
             )
@@ -79,6 +89,7 @@ class SubscribeAvatarChangesServiceImplTest {
         @DisplayName("목록 변경 이벤트를 받으면 최신 아바타 목록을 조회한다")
         fun `finds latest avatar list when event is received`() {
             // Given
+            given(transactionManager.getTransaction(any(TransactionDefinition::class.java))).willReturn(transactionStatus)
             given(avatarRepository.findAllByOrderByIdAsc()).willReturn(listOf(avatar()))
             subscribeAvatarChangesService.execute()
 

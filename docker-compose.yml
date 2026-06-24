@@ -43,8 +43,18 @@ services:
       until mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do sleep 2; done;
       mc mb --ignore-existing local/$$S3_BUCKET;
       mc anonymous set download local/$$S3_BUCKET;
+      exec tail -f /dev/null;
       "
+
+  qdrant:
+    image: qdrant/qdrant:v1.18.2
+    container_name: aikon-qdrant
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
 
 volumes:
   postgres-data:
   minio-data:
+  qdrant-data:
