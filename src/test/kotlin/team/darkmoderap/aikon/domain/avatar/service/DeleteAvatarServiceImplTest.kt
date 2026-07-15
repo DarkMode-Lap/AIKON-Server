@@ -138,7 +138,7 @@ class DeleteAvatarServiceImplTest {
         ) = AvatarEntity(
             nickname = "test",
             gender = Gender.MALE,
-            style = Style.STUDIO,
+            style = Style.GHIBLI,
             ageRange = AgeRange.AGE_20_PLUS,
             generationStatus = status,
             imageUrl = imageUrl,

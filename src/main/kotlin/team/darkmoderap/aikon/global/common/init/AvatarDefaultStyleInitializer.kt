@@ -14,7 +14,7 @@ class AvatarDefaultStyleInitializer(
     @Transactional
     override fun run(vararg args: String) {
         if (!avatarDefaultStyleRepository.existsById(AvatarDefaultStyle.SINGLETON_ID)) {
-            avatarDefaultStyleRepository.save(AvatarDefaultStyle(defaultStyle = Style.STUDIO))
+            avatarDefaultStyleRepository.save(AvatarDefaultStyle(defaultStyle = Style.ENHANCED))
         }
     }
 }
