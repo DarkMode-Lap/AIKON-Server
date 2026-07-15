@@ -503,7 +503,7 @@ class AvatarControllerTest {
             return CreateAvatarReqDto(
                 nickname = "dummy",
                 gender = Gender.MALE,
-                style = Style.STUDIO,
+                style = Style.ZOOTOPIA,
                 ageRange = AgeRange.AGE_0_7,
             )
         }
@@ -539,7 +539,7 @@ class AvatarControllerTest {
 
         private fun anyDefaultStyleReqDto(): UpdateDefaultStyleReqDto {
             Mockito.any(UpdateDefaultStyleReqDto::class.java)
-            return UpdateDefaultStyleReqDto(style = Style.STUDIO)
+            return UpdateDefaultStyleReqDto(style = Style.GHIBLI)
         }
     }
 }

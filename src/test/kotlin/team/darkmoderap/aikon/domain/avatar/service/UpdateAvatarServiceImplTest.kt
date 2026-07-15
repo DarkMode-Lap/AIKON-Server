@@ -153,7 +153,7 @@ class UpdateAvatarServiceImplTest {
             AvatarEntity(
                 nickname = "기존이름",
                 gender = Gender.MALE,
-                style = Style.STUDIO,
+                style = Style.GHIBLI,
                 ageRange = AgeRange.AGE_0_7,
                 generationStatus = generationStatus,
             )
