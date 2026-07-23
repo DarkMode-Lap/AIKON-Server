@@ -14,5 +14,7 @@ interface AvatarImageStorage {
 
     fun toPublicUrl(s3Uri: String): String
 
+    fun generatePresignedUrl(imageUrl: String): String
+
     fun delete(imageUrl: String)
 }

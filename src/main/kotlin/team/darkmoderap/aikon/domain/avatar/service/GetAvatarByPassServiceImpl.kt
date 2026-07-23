@@ -11,6 +11,7 @@ import team.darkmoderap.aikon.global.common.error.ErrorCode
 @Service
 class GetAvatarByPassServiceImpl(
     private val avatarRepository: AvatarRepository,
+    private val avatarImageStorage: AvatarImageStorage,
     private val avatarQrUrlProvider: AvatarQrUrlProvider,
 ) : GetAvatarByPassService {
     @Transactional(readOnly = true)
@@ -20,7 +21,7 @@ class GetAvatarByPassServiceImpl(
                 ?: throw AikonException(ErrorCode.AVATAR_NOT_FOUND)
 
         val isCompleted = avatar.generationStatus == GenerationStatus.COMPLETED
-        val imageUrl = if (isCompleted) avatar.imageUrl else null
+        val imageUrl = if (isCompleted) avatar.imageUrl?.let { avatarImageStorage.generatePresignedUrl(it) } else null
         val resolvedPassUrl = if (isCompleted) avatar.passUrl else null
 
         return GetAvatarResDto(

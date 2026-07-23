@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 @Service
 class SubscribeAvatarChangesServiceImpl(
     private val avatarRepository: AvatarRepository,
+    private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
     transactionManager: PlatformTransactionManager,
     @Value("\${aikon.sse.timeout-millis:1800000}") private val timeoutMillis: Long,
@@ -134,7 +135,7 @@ class SubscribeAvatarChangesServiceImpl(
             gender = gender,
             ageRange = ageRange,
             generationStatus = generationStatus,
-            imageUrl = imageUrl,
+            imageUrl = imageUrl?.let { avatarImageStorage.generatePresignedUrl(it) },
             passUrl = passUrl,
             createdAt = createdAt,
         )

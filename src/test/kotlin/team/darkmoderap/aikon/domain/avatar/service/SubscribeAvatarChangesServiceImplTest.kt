@@ -32,6 +32,9 @@ class SubscribeAvatarChangesServiceImplTest {
     private lateinit var avatarRepository: AvatarRepository
 
     @Mock
+    private lateinit var avatarImageStorage: AvatarImageStorage
+
+    @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
 
     @Mock
@@ -47,6 +50,7 @@ class SubscribeAvatarChangesServiceImplTest {
         subscribeAvatarChangesService =
             SubscribeAvatarChangesServiceImpl(
                 avatarRepository = avatarRepository,
+                avatarImageStorage = avatarImageStorage,
                 eventPublisher = eventPublisher,
                 transactionManager = transactionManager,
                 timeoutMillis = 5000L,
