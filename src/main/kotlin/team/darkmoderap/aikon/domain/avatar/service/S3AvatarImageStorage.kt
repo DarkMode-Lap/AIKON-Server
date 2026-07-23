@@ -5,16 +5,22 @@ import org.springframework.stereotype.Service
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
+import java.time.Duration
 
 @Service
 class S3AvatarImageStorage(
     private val s3Client: S3Client,
+    private val s3Presigner: S3Presigner,
     @Value("\${aws.region}") private val region: String,
     @Value("\${aws.s3.bucket}") private val bucket: String,
     @Value("\${aws.s3.public-base-url}") private val publicBaseUrl: String,
+    @Value("\${aws.s3.presigned-url-expiration-seconds}") private val presignedUrlExpirationSeconds: Long,
 ) : AvatarImageStorage {
     override fun upload(
         avatarId: Long,
@@ -78,6 +84,26 @@ class S3AvatarImageStorage(
         } else {
             "${publicBaseUrl.trimEnd('/')}/$key"
         }
+    }
+
+    override fun generatePresignedUrl(imageUrl: String): String {
+        val key =
+            extractKey(imageUrl)
+                ?: throw AikonException(ErrorCode.AVATAR_IMAGE_URL_GENERATION_FAILED)
+
+        val presignRequest =
+            GetObjectPresignRequest
+                .builder()
+                .signatureDuration(Duration.ofSeconds(presignedUrlExpirationSeconds))
+                .getObjectRequest(
+                    GetObjectRequest
+                        .builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .build(),
+                ).build()
+
+        return s3Presigner.presignGetObject(presignRequest).url().toString()
     }
 
     override fun delete(imageUrl: String) {

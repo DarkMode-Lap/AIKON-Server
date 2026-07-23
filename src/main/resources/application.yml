@@ -39,3 +39,4 @@ aws:
     public-base-url: ${S3_PUBLIC_BASE_URL:}
     endpoint: ${S3_ENDPOINT:}
     path-style-access-enabled: ${S3_PATH_STYLE_ACCESS_ENABLED:true}
+    presigned-url-expiration-seconds: ${S3_PRESIGNED_URL_EXPIRATION_SECONDS:3600}
