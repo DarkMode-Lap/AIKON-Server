@@ -40,3 +40,10 @@ aws:
     endpoint: ${S3_ENDPOINT:}
     path-style-access-enabled: ${S3_PATH_STYLE_ACCESS_ENABLED:true}
     presigned-url-expiration-seconds: ${S3_PRESIGNED_URL_EXPIRATION_SECONDS:3600}
+
+exchange:
+  minio:
+    endpoint: ${EXCHANGE_MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${EXCHANGE_MINIO_ACCESS_KEY:exchange-partner}
+    secret-key: ${EXCHANGE_MINIO_SECRET_KEY:}
+    bucket: ${EXCHANGE_MINIO_BUCKET:exchange}
