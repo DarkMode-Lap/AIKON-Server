@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 
 interface AvatarRepository : JpaRepository<AvatarEntity, Long> {
-    fun findAllByOrderByIdAsc(): List<AvatarEntity>
+    fun findAllByOrderByIdAsc(): List<AvatarSummaryProjection>
 
     fun findByPassUrl(passUrl: String): AvatarEntity?
 

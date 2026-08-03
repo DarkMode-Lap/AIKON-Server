@@ -14,10 +14,10 @@ import org.springframework.transaction.event.TransactionalEventListener
 import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import team.darkmoderap.aikon.domain.avatar.dto.AvatarChangeResDto
-import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarSseSubscribedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
+import team.darkmoderap.aikon.domain.avatar.repository.AvatarSummaryProjection
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
 import java.util.concurrent.CopyOnWriteArrayList
@@ -127,7 +127,7 @@ class SubscribeAvatarChangesServiceImpl(
         }
     }
 
-    private fun AvatarEntity.toChangeResDto(): AvatarChangeResDto =
+    private fun AvatarSummaryProjection.toChangeResDto(): AvatarChangeResDto =
         AvatarChangeResDto(
             id = id,
             nickname = nickname,
