@@ -16,7 +16,6 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.TransactionStatus
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
-import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.entity.enum.AgeRange
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
@@ -24,7 +23,9 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarSseSubscribedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
+import team.darkmoderap.aikon.domain.avatar.repository.AvatarSummaryProjection
 import team.darkmoderap.aikon.global.common.error.AikonException
+import java.time.Instant
 
 @ExtendWith(MockitoExtension::class)
 class SubscribeAvatarChangesServiceImplTest {
@@ -94,7 +95,7 @@ class SubscribeAvatarChangesServiceImplTest {
         fun `finds latest avatar list when event is received`() {
             // Given
             given(transactionManager.getTransaction(any(TransactionDefinition::class.java))).willReturn(transactionStatus)
-            given(avatarRepository.findAllByOrderByIdAsc()).willReturn(listOf(avatar()))
+            given(avatarRepository.findAllByOrderByIdAsc()).willReturn(listOf(avatarSummaryProjection()))
             subscribeAvatarChangesService.execute()
 
             // When
@@ -121,14 +122,17 @@ class SubscribeAvatarChangesServiceImplTest {
     }
 
     companion object {
-        private fun avatar(): AvatarEntity =
-            AvatarEntity(
-                nickname = "새아바타",
-                gender = Gender.FEMALE,
-                style = Style.GHIBLI,
-                ageRange = AgeRange.AGE_20_PLUS,
-                generationStatus = GenerationStatus.WAITING,
-                passUrl = "Aikon500",
-            )
+        private fun avatarSummaryProjection(): AvatarSummaryProjection =
+            object : AvatarSummaryProjection {
+                override val id: Long = 1L
+                override val nickname: String = "새아바타"
+                override val style: Style = Style.GHIBLI
+                override val gender: Gender = Gender.FEMALE
+                override val ageRange: AgeRange = AgeRange.AGE_20_PLUS
+                override val generationStatus: GenerationStatus = GenerationStatus.WAITING
+                override val imageUrl: String? = null
+                override val passUrl: String? = "Aikon500"
+                override val createdAt: Instant = Instant.now()
+            }
     }
 }
