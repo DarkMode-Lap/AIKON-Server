@@ -70,6 +70,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: ENVFILE,GITHUB_TOKEN,ACTOR
@@ -98,3 +99,4 @@ jobs:
           ENVFILE: ${{ secrets.ENVFILE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
+
