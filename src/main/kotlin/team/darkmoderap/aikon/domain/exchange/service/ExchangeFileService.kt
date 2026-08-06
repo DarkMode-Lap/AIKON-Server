@@ -15,7 +15,7 @@ class ExchangeFileService(
     @Qualifier("exchangeS3Client") private val s3Client: S3Client,
     @Value("\${exchange.minio.bucket}") private val bucket: String,
 ) {
-    fun uploadIncoming(
+    fun uploadAvatar(
         file: MultipartFile,
         fileName: String = "Aikon500.png",
     ) {
@@ -23,19 +23,19 @@ class ExchangeFileService(
             PutObjectRequest
                 .builder()
                 .bucket(bucket)
-                .key("incoming/$fileName")
+                .key("avatar/$fileName")
                 .contentType(file.contentType ?: MediaType.APPLICATION_OCTET_STREAM_VALUE)
                 .build()
 
         file.inputStream.use { s3Client.putObject(request, RequestBody.fromInputStream(it, file.size)) }
     }
 
-    fun downloadOutgoing(fileName: String = "report500.png"): ByteArray {
+    fun downloadReport(fileName: String = "report500.png"): ByteArray {
         val request =
             GetObjectRequest
                 .builder()
                 .bucket(bucket)
-                .key("outgoing/$fileName")
+                .key("report/$fileName")
                 .build()
 
         return s3Client.getObjectAsBytes(request).asByteArray()

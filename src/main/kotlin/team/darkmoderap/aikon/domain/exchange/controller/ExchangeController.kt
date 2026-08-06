@@ -16,14 +16,14 @@ import team.darkmoderap.aikon.domain.exchange.service.ExchangeFileService
 class ExchangeController(
     private val exchangeFileService: ExchangeFileService,
 ) {
-    @PostMapping("/upload", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PostMapping("/avatar", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun uploadIncoming(
+    fun uploadAvatar(
         @RequestPart("file") file: MultipartFile,
     ) {
-        exchangeFileService.uploadIncoming(file)
+        exchangeFileService.uploadAvatar(file)
     }
 
-    @GetMapping("/outgoing", produces = [MediaType.IMAGE_PNG_VALUE])
-    fun downloadOutgoing(): ByteArray = exchangeFileService.downloadOutgoing()
+    @GetMapping("/report", produces = [MediaType.IMAGE_PNG_VALUE])
+    fun downloadReport(): ByteArray = exchangeFileService.downloadReport()
 }
