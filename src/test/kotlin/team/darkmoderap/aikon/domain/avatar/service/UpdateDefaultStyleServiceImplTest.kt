@@ -36,7 +36,7 @@ class UpdateDefaultStyleServiceImplTest {
         @DisplayName("설정이 있으면 기본 스타일을 수정한다")
         fun `updates default style when setting exists`() {
             // Given
-            val setting = AvatarDefaultStyle(defaultStyle = Style.STUDIO)
+            val setting = AvatarDefaultStyle(defaultStyle = Style.ZOOTOPIA)
             given(avatarDefaultStyleRepository.findById(AvatarDefaultStyle.SINGLETON_ID))
                 .willReturn(Optional.of(setting))
             val reqDto = UpdateDefaultStyleReqDto(Style.GHIBLI)

@@ -7,6 +7,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.S3Configuration
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import java.net.URI
 
 @Configuration
@@ -19,6 +20,32 @@ class S3Config {
     ): S3Client {
         val builder =
             S3Client
+                .builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.builder().build())
+                .serviceConfiguration(
+                    S3Configuration
+                        .builder()
+                        .pathStyleAccessEnabled(pathStyleAccessEnabled)
+                        .build(),
+                )
+
+        if (endpoint.isNotBlank()) {
+            builder.endpointOverride(URI.create(endpoint))
+        }
+
+        return builder
+            .build()
+    }
+
+    @Bean
+    fun s3Presigner(
+        @Value("\${aws.region}") region: String,
+        @Value("\${aws.s3.endpoint}") endpoint: String,
+        @Value("\${aws.s3.path-style-access-enabled}") pathStyleAccessEnabled: Boolean,
+    ): S3Presigner {
+        val builder =
+            S3Presigner
                 .builder()
                 .region(Region.of(region))
                 .credentialsProvider(DefaultCredentialsProvider.builder().build())

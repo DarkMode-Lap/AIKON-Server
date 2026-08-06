@@ -6,6 +6,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.BindException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
@@ -83,6 +84,13 @@ class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestPartException::class)
     fun handleMissingServletRequestPartException(exception: MissingServletRequestPartException): ResponseEntity<ErrorResponse> {
         logger.warn("Handled missing request part exception {}", exception.message)
+
+        return createErrorResponse(ErrorCode.INVALID_INPUT_VALUE)
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException::class)
+    fun handleMissingRequestHeaderException(exception: MissingRequestHeaderException): ResponseEntity<ErrorResponse> {
+        logger.warn("Handled missing request header exception {}", exception.message)
 
         return createErrorResponse(ErrorCode.INVALID_INPUT_VALUE)
     }

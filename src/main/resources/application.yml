@@ -13,7 +13,14 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+fastapi:
+  base-url: ${FASTAPI_BASE_URL:http://localhost:8000}
+
+internal:
+  callback-secret: ${INTERNAL_CALLBACK_SECRET:dev-secret}
+
 aikon:
+  api-base-url: ${API_BASE_URL:}
   frontend:
     public-base-url: ${FRONTEND_PUBLIC_BASE_URL:}
   sse:
@@ -32,3 +39,11 @@ aws:
     public-base-url: ${S3_PUBLIC_BASE_URL:}
     endpoint: ${S3_ENDPOINT:}
     path-style-access-enabled: ${S3_PATH_STYLE_ACCESS_ENABLED:true}
+    presigned-url-expiration-seconds: ${S3_PRESIGNED_URL_EXPIRATION_SECONDS:3600}
+
+exchange:
+  minio:
+    endpoint: ${EXCHANGE_MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${EXCHANGE_MINIO_ACCESS_KEY:exchange-partner}
+    secret-key: ${EXCHANGE_MINIO_SECRET_KEY:}
+    bucket: ${EXCHANGE_MINIO_BUCKET:exchange}

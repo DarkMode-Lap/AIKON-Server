@@ -33,6 +33,7 @@ import team.darkmoderap.aikon.domain.avatar.entity.enum.Gender
 import team.darkmoderap.aikon.domain.avatar.entity.enum.GenerationStatus
 import team.darkmoderap.aikon.domain.avatar.entity.enum.Style
 import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.CreateFeedbackService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAllAvatarsService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.GetAvatarByPassService
@@ -53,6 +54,7 @@ class AvatarControllerTest {
     private val updateDefaultStyleService = mock(UpdateDefaultStyleService::class.java)
     private val deleteAvatarService = mock(DeleteAvatarService::class.java)
     private val deleteAllAvatarsService = mock(DeleteAllAvatarsService::class.java)
+    private val createFeedbackService = mock(CreateFeedbackService::class.java)
 
     private val mockMvc: MockMvc =
         MockMvcBuilders
@@ -66,6 +68,7 @@ class AvatarControllerTest {
                     updateDefaultStyleService,
                     deleteAvatarService,
                     deleteAllAvatarsService,
+                    createFeedbackService,
                     Validation.buildDefaultValidatorFactory().validator,
                     jacksonObjectMapper(),
                 ),
@@ -83,16 +86,19 @@ class AvatarControllerTest {
                 .`when`(createAvatarService.execute(anyCreateReqDto(), anyImage()))
                 .thenReturn(CreateAvatarResDto(id = AVATAR_ID, generationStatus = GenerationStatus.PROCESSING))
 
-            // When & Then
-            mockMvc
-                .perform(
+            // When
+            val result =
+                mockMvc.perform(
                     multipart("/avatars")
                         .file(reqDtoPart())
                         .file(imagePart()),
-                ).andExpect(status().isCreated)
+                )
+
+            // Then
+            result
+                .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").value(AVATAR_ID))
                 .andExpect(jsonPath("$.generationStatus").value("PROCESSING"))
-
             verify(createAvatarService).execute(anyCreateReqDto(), anyImage())
         }
 
@@ -497,7 +503,7 @@ class AvatarControllerTest {
             return CreateAvatarReqDto(
                 nickname = "dummy",
                 gender = Gender.MALE,
-                style = Style.STUDIO,
+                style = Style.ZOOTOPIA,
                 ageRange = AgeRange.AGE_0_7,
             )
         }
@@ -533,7 +539,7 @@ class AvatarControllerTest {
 
         private fun anyDefaultStyleReqDto(): UpdateDefaultStyleReqDto {
             Mockito.any(UpdateDefaultStyleReqDto::class.java)
-            return UpdateDefaultStyleReqDto(style = Style.STUDIO)
+            return UpdateDefaultStyleReqDto(style = Style.GHIBLI)
         }
     }
 }

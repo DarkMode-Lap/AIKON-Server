@@ -26,6 +26,9 @@ class GetAvatarServiceImplTest {
     private lateinit var avatarRepository: AvatarRepository
 
     @Mock
+    private lateinit var avatarImageStorage: AvatarImageStorage
+
+    @Mock
     private lateinit var avatarQrUrlProvider: AvatarQrUrlProvider
 
     @InjectMocks
@@ -39,6 +42,7 @@ class GetAvatarServiceImplTest {
         fun `returns completed avatar with result urls when found`() {
             // Given
             given(avatarRepository.findById(AVATAR_ID)).willReturn(Optional.of(avatar()))
+            given(avatarImageStorage.generatePresignedUrl("https://example.com/avatar.png")).willReturn(PRESIGNED_IMAGE_URL)
             given(avatarQrUrlProvider.create("Aikon500")).willReturn(QR_URL)
 
             // When
@@ -48,7 +52,7 @@ class GetAvatarServiceImplTest {
             assertEquals(AVATAR_ID, result.id)
             assertEquals("새아바타", result.nickname)
             assertEquals(GenerationStatus.COMPLETED, result.generationStatus)
-            assertEquals("https://example.com/avatar.png", result.imageUrl)
+            assertEquals(PRESIGNED_IMAGE_URL, result.imageUrl)
             assertEquals("Aikon500", result.passUrl)
             assertEquals(QR_URL, result.qrUrl)
         }
@@ -91,6 +95,7 @@ class GetAvatarServiceImplTest {
     companion object {
         private const val AVATAR_ID = 1L
         private const val QR_URL = "https://aikon.example.com/pass/Aikon500"
+        private const val PRESIGNED_IMAGE_URL = "https://example.com/avatar.png?X-Amz-Signature=signed"
 
         private fun avatar(generationStatus: GenerationStatus = GenerationStatus.COMPLETED): AvatarEntity =
             AvatarEntity(

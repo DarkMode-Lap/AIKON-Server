@@ -5,16 +5,22 @@ import org.springframework.stereotype.Service
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
+import java.time.Duration
 
 @Service
 class S3AvatarImageStorage(
     private val s3Client: S3Client,
+    private val s3Presigner: S3Presigner,
     @Value("\${aws.region}") private val region: String,
     @Value("\${aws.s3.bucket}") private val bucket: String,
     @Value("\${aws.s3.public-base-url}") private val publicBaseUrl: String,
+    @Value("\${aws.s3.presigned-url-expiration-seconds}") private val presignedUrlExpirationSeconds: Long,
 ) : AvatarImageStorage {
     override fun upload(
         avatarId: Long,
@@ -42,6 +48,64 @@ class S3AvatarImageStorage(
         }
     }
 
+    override fun uploadSourceImage(
+        avatarId: Long,
+        bytes: ByteArray,
+        mimeType: String,
+    ): String {
+        if (bucket.isBlank()) {
+            throw AikonException(ErrorCode.AVATAR_IMAGE_GENERATION_FAILED)
+        }
+
+        val ext = mimeType.toExtension()
+        val key = "sources/$avatarId.$ext"
+        val request =
+            PutObjectRequest
+                .builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType(mimeType)
+                .build()
+
+        s3Client.putObject(request, RequestBody.fromBytes(bytes))
+
+        return "s3://$bucket/$key"
+    }
+
+    override fun toPublicUrl(s3Uri: String): String {
+        val key =
+            if (s3Uri.startsWith("s3://")) {
+                s3Uri.substringAfter("s3://").substringAfter("/")
+            } else {
+                s3Uri
+            }
+        return if (publicBaseUrl.isBlank()) {
+            "https://$bucket.s3.$region.amazonaws.com/$key"
+        } else {
+            "${publicBaseUrl.trimEnd('/')}/$key"
+        }
+    }
+
+    override fun generatePresignedUrl(imageUrl: String): String {
+        val key =
+            extractKey(imageUrl)
+                ?: throw AikonException(ErrorCode.AVATAR_IMAGE_URL_GENERATION_FAILED)
+
+        val presignRequest =
+            GetObjectPresignRequest
+                .builder()
+                .signatureDuration(Duration.ofSeconds(presignedUrlExpirationSeconds))
+                .getObjectRequest(
+                    GetObjectRequest
+                        .builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .build(),
+                ).build()
+
+        return s3Presigner.presignGetObject(presignRequest).url().toString()
+    }
+
     override fun delete(imageUrl: String) {
         if (bucket.isBlank()) {
             throw AikonException(ErrorCode.AVATAR_IMAGE_DELETE_FAILED)
@@ -61,6 +125,11 @@ class S3AvatarImageStorage(
     }
 
     private fun extractKey(imageUrl: String): String? {
+        val s3Prefix = "s3://$bucket/"
+        if (imageUrl.startsWith(s3Prefix)) {
+            return imageUrl.removePrefix(s3Prefix)
+        }
+
         val normalizedPublicBaseUrl = publicBaseUrl.trimEnd('/')
         if (normalizedPublicBaseUrl.isNotBlank() && imageUrl.startsWith("$normalizedPublicBaseUrl/")) {
             return imageUrl.removePrefix("$normalizedPublicBaseUrl/")

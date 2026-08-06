@@ -32,10 +32,12 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import team.darkmoderap.aikon.domain.avatar.dto.AvatarChangeResDto
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.CreateAvatarResDto
+import team.darkmoderap.aikon.domain.avatar.dto.CreateFeedbackReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.GetAvatarResDto
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateAvatarReqDto
 import team.darkmoderap.aikon.domain.avatar.dto.UpdateDefaultStyleReqDto
 import team.darkmoderap.aikon.domain.avatar.service.CreateAvatarService
+import team.darkmoderap.aikon.domain.avatar.service.CreateFeedbackService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAllAvatarsService
 import team.darkmoderap.aikon.domain.avatar.service.DeleteAvatarService
 import team.darkmoderap.aikon.domain.avatar.service.GetAvatarByPassService
@@ -59,6 +61,7 @@ class AvatarController(
     private val updateDefaultStyleService: UpdateDefaultStyleService,
     private val deleteAvatarService: DeleteAvatarService,
     private val deleteAllAvatarsService: DeleteAllAvatarsService,
+    private val createFeedbackService: CreateFeedbackService,
     private val validator: Validator,
     private val objectMapper: ObjectMapper,
 ) {
@@ -207,6 +210,29 @@ class AvatarController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteAllAvatars() {
         deleteAllAvatarsService.execute()
+    }
+
+    @Operation(summary = "아바타 피드백 등록")
+    @ApiResponses(
+        ApiResponse(responseCode = "201", description = "피드백 등록 성공"),
+        ApiResponse(
+            responseCode = "400",
+            description = "잘못된 입력값",
+            content = [Content(schema = Schema(implementation = ErrorResponse::class))],
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "아바타를 찾을 수 없음",
+            content = [Content(schema = Schema(implementation = ErrorResponse::class))],
+        ),
+    )
+    @PostMapping("/{avatarId}/feedback")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun createFeedback(
+        @PathVariable avatarId: Long,
+        @Valid @RequestBody reqDto: CreateFeedbackReqDto,
+    ) {
+        createFeedbackService.execute(avatarId, reqDto)
     }
 
     private fun parseCreateAvatarReqDto(rawReqDto: String): CreateAvatarReqDto {

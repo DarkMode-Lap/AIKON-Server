@@ -7,15 +7,17 @@ import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
+import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import team.darkmoderap.aikon.domain.avatar.dto.AvatarChangeResDto
-import team.darkmoderap.aikon.domain.avatar.entity.AvatarEntity
 import team.darkmoderap.aikon.domain.avatar.event.AvatarListChangedEvent
 import team.darkmoderap.aikon.domain.avatar.event.AvatarSseSubscribedEvent
 import team.darkmoderap.aikon.domain.avatar.repository.AvatarRepository
+import team.darkmoderap.aikon.domain.avatar.repository.AvatarSummaryProjection
 import team.darkmoderap.aikon.global.common.error.AikonException
 import team.darkmoderap.aikon.global.common.error.ErrorCode
 import java.util.concurrent.CopyOnWriteArrayList
@@ -23,12 +25,18 @@ import java.util.concurrent.CopyOnWriteArrayList
 @Service
 class SubscribeAvatarChangesServiceImpl(
     private val avatarRepository: AvatarRepository,
+    private val avatarImageStorage: AvatarImageStorage,
     private val eventPublisher: ApplicationEventPublisher,
+    transactionManager: PlatformTransactionManager,
     @Value("\${aikon.sse.timeout-millis:1800000}") private val timeoutMillis: Long,
     @Value("\${aikon.sse.max-connections:100}") private val maxConnections: Int,
 ) : SubscribeAvatarChangesService {
     private val logger = LoggerFactory.getLogger(SubscribeAvatarChangesServiceImpl::class.java)
     private val emitters = CopyOnWriteArrayList<SseEmitter>()
+    private val readOnlyTransactionTemplate =
+        TransactionTemplate(transactionManager).apply {
+            isReadOnly = true
+        }
 
     override fun execute(): SseEmitter {
         val emitter = SseEmitter(timeoutMillis)
@@ -57,10 +65,9 @@ class SubscribeAvatarChangesServiceImpl(
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    @Transactional(readOnly = true)
     fun handleAvatarListChanged(event: AvatarListChangedEvent) {
         if (emitters.isEmpty()) return
-        val avatarChanges = findAvatarChanges()
+        val avatarChanges = readOnlyTransactionTemplate.execute { findAvatarChanges() }.orEmpty()
         emitters.forEach { emitter -> send(emitter, avatarChanges) }
     }
 
@@ -120,7 +127,7 @@ class SubscribeAvatarChangesServiceImpl(
         }
     }
 
-    private fun AvatarEntity.toChangeResDto(): AvatarChangeResDto =
+    private fun AvatarSummaryProjection.toChangeResDto(): AvatarChangeResDto =
         AvatarChangeResDto(
             id = id,
             nickname = nickname,
@@ -128,7 +135,7 @@ class SubscribeAvatarChangesServiceImpl(
             gender = gender,
             ageRange = ageRange,
             generationStatus = generationStatus,
-            imageUrl = imageUrl,
+            imageUrl = imageUrl?.let { avatarImageStorage.generatePresignedUrl(it) },
             passUrl = passUrl,
             createdAt = createdAt,
         )
